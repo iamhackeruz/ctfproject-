@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/security/rate-limiter";
 import { logTerminalAudit } from "@/lib/security/audit-logger";
 import { TerminalSessionManager } from "@/lib/terminal/session-manager";
 import { canAccess } from "@/lib/security/entitlements";
+import { checkAndRecordTerminalUsage } from "@/lib/security/quota";
 
 const MAX_COMMAND_LENGTH = 1024;
 
@@ -119,6 +120,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         if (token) attachSessionCookie(forbiddenRes, token);
         return forbiddenRes;
       }
+    }
+
+    // Kunlik terminal vaqti kvotasi (dailyTerminalQuotaMinutes)
+    const quotaCheck = await checkAndRecordTerminalUsage(session.userId);
+    if (!quotaCheck.allowed) {
+      const quotaRes = NextResponse.json(
+        {
+          stdout: "",
+          stderr: `Kvota cheklovi: ${quotaCheck.reason || "Kunlik terminal vaqti limiti tugadi."}`,
+          cwd: currentCwd || "/home/student",
+          exitCode: 429,
+        },
+        { status: 429 }
+      );
+      if (token) attachSessionCookie(quotaRes, token);
+      return quotaRes;
     }
 
     // Sessiya ID ni foydalanuvchiga bog'lash

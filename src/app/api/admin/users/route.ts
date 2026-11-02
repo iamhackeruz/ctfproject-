@@ -187,6 +187,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         role: assignedRole,
         passwordHash,
         mustChangePassword: true, // Birinchi kirishda almashtirish majburiy
+        registeredWithInvite: true,
+        dailyTerminalQuotaMinutes: 0,
+        dailyLabQuotaMinutes: 0,
       },
     });
 

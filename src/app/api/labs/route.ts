@@ -17,6 +17,7 @@ import { RestrictedDockerProxy } from "@/lib/terminal/docker-proxy";
 import { generateLabTicket } from "@/lib/labs/tickets";
 import { Role } from "@prisma/client";
 import { canAccess } from "@/lib/security/entitlements";
+import { checkLabQuota, recordLabUsage } from "@/lib/security/quota";
 
 const STATIC_SOLUTIONS: Record<string, string> = {
   "crypto-caesar": "flag{cyber_caesar_rot13_decryption_success}",
@@ -481,6 +482,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return res;
       }
 
+      // Kunlik laboratoriya vaqti kvotasi (dailyLabQuotaMinutes)
+      const labQuota = await checkLabQuota(session.userId);
+      if (!labQuota.allowed) {
+        const res = NextResponse.json(
+          { success: false, error: labQuota.reason || "Kunlik laboratoriya (Web Lab) vaqti limiti tugadi." },
+          { status: 429 }
+        );
+        if (token) attachSessionCookie(res, token);
+        return res;
+      }
+
       // 1. Global limit: maksimal faol weblab instansiyalar (Contabo VPS: 4 ta)
       const maxWebLabs = parseInt(process.env.MAX_WEB_LABS || "4", 10);
       const runningCount = await prisma.webLabInstance.count({
@@ -505,6 +517,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
       if (priorUserInstance) {
         await RestrictedDockerProxy.stopWebLab(priorUserInstance.containerId).catch(() => {});
+        const elapsedMinutes = Math.max(1, Math.ceil((Date.now() - priorUserInstance.createdAt.getTime()) / 60000));
+        await recordLabUsage(session.userId, elapsedMinutes).catch(() => {});
         await prisma.webLabInstance.update({
           where: { id: priorUserInstance.id },
           data: { status: "stopped" },
@@ -576,6 +590,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       const { instanceId } = body;
       if (instanceId) {
         await RestrictedDockerProxy.stopWebLab(instanceId);
+        const inst = await prisma.webLabInstance.findFirst({
+          where: { containerId: instanceId, userId: session.userId },
+        });
+        if (inst) {
+          const elapsedMinutes = Math.max(1, Math.ceil((Date.now() - inst.createdAt.getTime()) / 60000));
+          await recordLabUsage(session.userId, elapsedMinutes).catch(() => {});
+        }
         await prisma.webLabInstance.updateMany({
           where: { containerId: instanceId, userId: session.userId },
           data: { status: "stopped" },

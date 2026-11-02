@@ -100,6 +100,7 @@ model User {
   registrationIp      String?
   dailyTerminalQuotaMinutes Int            @default(60)
   dailyLabQuotaMinutes Int                 @default(30)
+  registeredWithInvite Boolean             @default(false)
   telegramChatId      String?              @unique
   telegramUsername    String?
   telegramConnectedAt DateTime?
@@ -123,6 +124,7 @@ model User {
   uploadedVideos       Video[]
   videoProgress        VideoProgress[]
   createdAssignments   Assignment[]          @relation("AssignmentCreator")
+  dailyUsages          DailyResourceUsage[]
   submissions          Submission[]
   gradedSubmissions    Submission[]          @relation("SubmissionGrader")
   assignmentExtensions AssignmentExtension[]
@@ -858,5 +860,23 @@ model TwoFactorBackupCode {
 
   @@index([userId, used])
   @@map("two_factor_backup_codes")
+}
+
+model DailyResourceUsage {
+  id              String    @id @default(cuid())
+  userId          String
+  date            String    // "YYYY-MM-DD" in UTC server time
+  terminalMinutes Float     @default(0)
+  labMinutes      Float     @default(0)
+  lastTerminalAt  DateTime?
+  lastLabAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_resource_usages")
 }
 

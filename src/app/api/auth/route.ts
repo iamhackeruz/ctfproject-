@@ -1042,6 +1042,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           role: Role.student,
           avatar: "👨‍🎓",
           emailVerified: true, // Taklif kodi bilan kelgan talaba darhol tasdiqlanadi
+          registeredWithInvite: true,
+          dailyTerminalQuotaMinutes: 0, // O'quv markaz talabalari uchun kvota cheklanmagan
+          dailyLabQuotaMinutes: 0,
           registrationIp: clientIp,
         },
       });

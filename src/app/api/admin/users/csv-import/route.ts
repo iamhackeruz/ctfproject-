@@ -120,6 +120,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           role: Role.student,
           passwordHash,
           mustChangePassword: true,
+          registeredWithInvite: true,
+          dailyTerminalQuotaMinutes: 0,
+          dailyLabQuotaMinutes: 0,
         },
       });
 

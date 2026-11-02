@@ -21,6 +21,9 @@ export default function Footer() {
           <Link href="/labs" className={s.link}>Laboratoriya (CTF)</Link>
           <Link href="/terminal" className={s.link}>Terminal</Link>
           <Link href="/dashboard" className={s.link}>Kabinet</Link>
+          <Link href="/terms" className={s.link}>Foydalanish shartlari</Link>
+          <Link href="/privacy" className={s.link}>Maxfiylik siyosati</Link>
+          <Link href="/contact" className={s.link}>Aloqa</Link>
         </div>
 
         <div className={s.topics}>

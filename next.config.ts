@@ -24,6 +24,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      { source: "/shartlar", destination: "/terms" },
+      { source: "/maxfiylik", destination: "/privacy" },
+      { source: "/aloqa", destination: "/contact" },
+    ];
+  },
   async headers() {
     return [
       {

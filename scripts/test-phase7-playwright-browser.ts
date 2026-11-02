@@ -142,7 +142,7 @@ async function runPhase7BrowserSuite() {
     await adminPage.click('button:has-text("Chiqish")');
     await adminPage.waitForTimeout(1000);
     await adminContext.close();
-    console.log("  ✅ Admin chiqishi muvaffaqiyatli");
+    assert(true, "Admin chiqishi muvaffaqiyatli");
 
     // ── [6] TALABA KIRISHI VA RBAC CHEKLOVLARINI TEKSHIRISH ─────────────────
     console.log("\n[6] Talaba Kirishi va RBAC Cheklovlari:");

@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "services/sandbox-daemon/dist/**",
+    ".test-dist/**",
+    ".seed-dist/**",
+    "scripts/**",
   ]),
 ]);
 

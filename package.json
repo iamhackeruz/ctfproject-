@@ -6,21 +6,40 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "daemon": "node services/sandbox-daemon/dist/server.js",
+    "init:admin": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/init-admin.js && rm -rf .test-dist",
+    "deploy": "bash scripts/deploy-first-run.sh",
+    "test:video": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase9-video-backend.js && node .test-dist/scripts/test-phase9-video-browser.js && rm -rf .test-dist",
+    "test:phase10": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase10-backend.js && node .test-dist/scripts/test-phase10-browser.js && rm -rf .test-dist",
+    "test:phase11": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase11-2fa-reminders.js && node .test-dist/scripts/test-phase11-playwright-2fa-mobile.js && rm -rf .test-dist",
+    "test:prod": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-prod-security.js && rm -rf .test-dist",
+    "test:security": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-terminal-security.js && node .test-dist/scripts/test-phase2-auth-db.js && node .test-dist/scripts/test-phase3-labs-http.js && node .test-dist/scripts/test-phase4-content-security.js && node .test-dist/scripts/test-phase5-platform-security.js && node .test-dist/scripts/test-phase6-playwright-browser.js && node .test-dist/scripts/test-browser-auth-flow.js && node .test-dist/scripts/test-phase7-admin-foundations.js && node .test-dist/scripts/test-phase7-playwright-browser.js && node .test-dist/scripts/test-phase8-fixes.js && node .test-dist/scripts/test-phase8-grant-revoke-browser.js && node .test-dist/scripts/test-phase9-video-backend.js && node .test-dist/scripts/test-phase9-video-browser.js && node .test-dist/scripts/test-phase10-backend.js && node .test-dist/scripts/test-phase10-browser.js && node .test-dist/scripts/test-phase11-2fa-reminders.js && node .test-dist/scripts/test-phase11-playwright-2fa-mobile.js && node .test-dist/scripts/test-prod-security.js && rm -rf .test-dist"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "next": "16.4.3",
+    "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "playwright": "^1.64.1",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

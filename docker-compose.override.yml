@@ -1,0 +1,18 @@
+# ==============================================================================
+# CyberEdu Platform — Mahalliy ishlab chiqish (Local Dev) override sozlamalari
+# DIQQAT: Ushbu fayl faqat lokal kompyuterda dasturchilar qulayligi uchun ishlatiladi.
+# Production serverda bu fayl ISHLATILMAYDI (serverga ko'chirilmaydi).
+#
+# Vazifasi:
+# - PostgreSQL portini faqat 127.0.0.1:5433 orqali lokal Prisma va testlar uchun ochish
+# - Sandbox Daemon portini faqat 127.0.0.1:5055 orqali lokal testlar uchun ochish
+# ==============================================================================
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  sandbox-daemon:
+    ports:
+      - "127.0.0.1:5055:5055"

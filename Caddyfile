@@ -1,0 +1,112 @@
+# ==============================================================================
+# CyberEdu Platform — Caddy 2 Production Reverse Proxy Konfiguratsiyasi
+# Talablar:
+# 1. TLS 1.2+ va Avtomatik HTTPS (Let's Encrypt / ZeroSSL)
+# 2. Strict-Transport-Security (HSTS) va xavfsizlik sarlavhalari
+# 3. Platforma ({$DOMAIN}) va Web Lablar ({$LABS_DOMAIN}) to'liq alohida domenlarda
+# 4. {$LABS_DOMAIN} subdomeniga o'tayotgan so'rovlardan platforma cookie'larini tozalash
+# 5. /api/cron/* faqat localhost'dan yoki to'g'ri CRON_SECRET sarlavhasi bilan chaqiriladi
+# 6. STANDART QIYMATLAR YO'Q: DOMAIN, LABS_DOMAIN yoki ACME_EMAIL bo'sh bo'lsa Caddy ishga tushmaydi!
+# ==============================================================================
+
+# Global sozlamalar
+{
+  email {$ACME_EMAIL}
+  admin off
+  servers {
+    protocols h1 h2
+  }
+}
+
+# ── 1. ASOSIY TA'LIM PLATFORMASI (https://{$DOMAIN}) ─────────────────────────
+{$DOMAIN} {
+  tls {
+    protocols tls1.2 tls1.3
+    ciphers TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+  }
+
+  # Xavfsizlik sarlavhalari
+  header {
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+    -Server
+    -X-Powered-By
+  }
+
+  # Katta hajmdagi buferlangan hujumlardan himoya
+  request_body {
+    max_size 10MB
+  }
+
+  # Cron API endpointlarini himoyalash:
+  # Faqat localhost yoki to'g'ri CRON_SECRET sarlavhasiga ega bo'lsa ruxsat berish
+  @blocked_cron {
+    path /api/cron/*
+    not remote_ip 127.0.0.1 ::1
+    not header X-Cron-Secret "{$CRON_SECRET}"
+    not header Authorization "Bearer {$CRON_SECRET}"
+  }
+  respond @blocked_cron "Kirish taqiqlangan" 403
+
+  # Next.js ilovasiga uzatish (Docker tarmog'idagi app:3000 yoki 127.0.0.1:3000)
+  reverse_proxy app:3000 {
+    header_up Host {host}
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto https
+  }
+
+  # Siqish (Gzip / Zstandard)
+  encode zstd gzip
+
+  # Kirish loglari
+  log {
+    output file /var/log/caddy/cyberedu-access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+  }
+}
+
+# ── 2. IZOLYATSIYA QILINGAN VEB-LABORATORIYALAR (https://{$LABS_DOMAIN}) ────
+{$LABS_DOMAIN} {
+  tls {
+    protocols tls1.2 tls1.3
+  }
+
+  header {
+    Strict-Transport-Security "max-age=63072000"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "no-referrer"
+    -Server
+    -X-Powered-By
+  }
+
+  request_body {
+    max_size 5MB
+  }
+
+  # KRITIK: Platformaning cyberedu_session cookie'si lab subdomeniga O'TMASIN!
+  # So'rov sarlavhalaridagi ota platforma sessiyalarini tozalash
+  reverse_proxy app:3000 {
+    header_up Host {host}
+    header_up X-Real-IP {remote_host}
+    header_up X-Forwarded-For {remote_host}
+    header_up X-Forwarded-Proto https
+
+    # Cookie sarlavhasidan cyberedu_session ni olib tashlash
+    header_up -Cookie
+  }
+
+  encode zstd gzip
+
+  log {
+    output file /var/log/caddy/labs-access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+  }
+}

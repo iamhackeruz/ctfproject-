@@ -1,0 +1,225 @@
+# ==============================================================================
+# CyberEdu Platform — Production Docker Compose Konfiguratsiyasi
+# Kiberxavfsizlik talablariga muvofiq qat'iy izolyatsiya qilingan arxitektura:
+# - Tashqi internetga faqat Caddy Reverse Proxy (80 va 443) ochiladi
+# - PostgreSQL va Sandbox Daemon tashqi portlarga umuman ochilmaydi (faqat ichki tarmoq)
+# - App faqat 127.0.0.1 ga bog'langan (tashqi interfeysga ochilmagan)
+# - STANDART QIYMATLAR YO'Q: DOMAIN, LABS_DOMAIN, ACME_EMAIL berilmasa ishga tushmaydi!
+# - Har bir konteyner uchun CPU va Xotira limitlari belgilangan
+# - Log rotatsiyasi: max-size 10m, max-file 5
+# ==============================================================================
+
+services:
+  # ── 1. ASOSIY ILOVA (Next.js Platform) ──────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyberedu-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000" # Faqat loopback 127.0.0.1 (tashqi interfeysga ochilmagan)
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-cyberedu}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD kiritilishi shart}@postgres:5432/${POSTGRES_DB:-cyberedu}?schema=public
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET kiritilishi shart}
+      - FLAG_SECRET=${FLAG_SECRET:?FLAG_SECRET kiritilishi shart}
+      - TICKET_SECRET=${TICKET_SECRET:?TICKET_SECRET kiritilishi shart}
+      - SIDECAR_SECRET=${SIDECAR_SECRET:?SIDECAR_SECRET kiritilishi shart}
+      - SANDBOX_DAEMON_URL=http://sandbox-daemon:5055
+      - ALLOW_PUBLIC_REGISTRATION=${ALLOW_PUBLIC_REGISTRATION:-false}
+      - DOMAIN=${DOMAIN:?DOMAIN muhit o'zgaruvchisi kiritilishi shart (masalan, cyberedu.uz)}
+      - LABS_DOMAIN=${LABS_DOMAIN:?LABS_DOMAIN muhit o'zgaruvchisi kiritilishi shart (masalan, labs.cyberedu.uz)}
+      - APP_URL=https://${DOMAIN:?DOMAIN muhit o'zgaruvchisi kiritilishi shart}
+      - LABS_ORIGIN=https://${LABS_DOMAIN:?LABS_DOMAIN muhit o'zgaruvchisi kiritilishi shart}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - MAX_TERMINALS=${MAX_TERMINALS:-15}
+      - MAX_WEB_LABS=${MAX_WEB_LABS:-4}
+      - VIDEO_DIR=/app/data/videos
+      - MAX_VIDEO_SIZE_BYTES=${MAX_VIDEO_SIZE_BYTES:-1610612736}
+      - ATTACHMENTS_DIR=/app/data/attachments
+      - MAX_ATTACHMENT_SIZE_BYTES=${MAX_ATTACHMENT_SIZE_BYTES:-10485760}
+      - TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY kiritilishi shart}
+      - CRON_SECRET=${CRON_SECRET:?CRON_SECRET kiritilishi shart}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}
+      - TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET:-}
+      - ADMIN_INIT_EMAIL=${ADMIN_INIT_EMAIL:-admin@cyberedu.uz}
+      - ADMIN_INIT_PASSWORD=${ADMIN_INIT_PASSWORD:-}
+      - ADMIN_INIT_NAME=${ADMIN_INIT_NAME:-CyberEdu Administrator}
+    volumes:
+      - cyberedu_prod_videos:/app/data/videos
+      - cyberedu_prod_attachments:/app/data/attachments
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sandbox-daemon:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/auth"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - cyberedu-frontend-net
+      - cyberedu-internal-net
+
+  # ── 2. XAVFSIZ MA'LUMOTLAR BAZASI (PostgreSQL 16) ────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: cyberedu-postgres-prod
+    restart: unless-stopped
+    # DIQQAT: ports bo'limi yo'q! Baza tashqi interfeysga umuman ochilmaydi.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cyberedu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD kiritilishi shart}
+      POSTGRES_DB: ${POSTGRES_DB:-cyberedu}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - cyberedu_prod_pgdata:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cyberedu} -d ${POSTGRES_DB:-cyberedu}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - cyberedu-internal-net
+
+  # ── 3. SANDBOX DAEMON SIDECAR (Docker boshqaruv xizmati) ────────────────
+  sandbox-daemon:
+    build:
+      context: ./services/sandbox-daemon
+      dockerfile: Dockerfile
+    container_name: cyberedu-sandbox-daemon-prod
+    restart: unless-stopped
+    # DIQQAT: ports bo'limi yo'q! Faqat ichki tarmoqda 5055-portda ishlaydi.
+    environment:
+      - DAEMON_PORT=5055
+      - SIDECAR_SECRET=${SIDECAR_SECRET:?SIDECAR_SECRET kiritilishi shart}
+      - LAB_NETWORK=cyberedu-weblab-net
+      - MAX_TERMINALS=${MAX_TERMINALS:-15}
+      - MAX_WEB_LABS=${MAX_WEB_LABS:-4}
+    volumes:
+      # Docker socket xavfsiz holatda faqat sidecar ga ulanadi (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5055/health"]
+      interval: 15s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - cyberedu-internal-net
+      - cyberedu-weblab-net
+
+  # ── 4. REVERSE PROXY (Caddy 2 — Avtomatik HTTPS) ──────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: cyberedu-caddy-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC
+    environment:
+      - DOMAIN=${DOMAIN:?DOMAIN muhit o'zgaruvchisi kiritilishi shart}
+      - LABS_DOMAIN=${LABS_DOMAIN:?LABS_DOMAIN muhit o'zgaruvchisi kiritilishi shart}
+      - ACME_EMAIL=${ACME_EMAIL:?ACME_EMAIL muhit o'zgaruvchisi kiritilishi shart}
+      - CRON_SECRET=${CRON_SECRET:?CRON_SECRET muhit o'zgaruvchisi kiritilishi shart}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - cyberedu_prod_caddy_data:/data
+      - cyberedu_prod_caddy_config:/config
+      - cyberedu_prod_caddy_logs:/var/log/caddy
+    depends_on:
+      app:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - cyberedu-frontend-net
+
+# ── TARMOQLAR (Qat'iy izolyatsiya qilingan) ──────────────────────────────────
+networks:
+  cyberedu-frontend-net:
+    driver: bridge
+    name: cyberedu-frontend-net
+  cyberedu-internal-net:
+    driver: bridge
+    name: cyberedu-internal-net
+    internal: true # Tashqi internetga chiqish taqiqlangan!
+  cyberedu-weblab-net:
+    driver: bridge
+    name: cyberedu-weblab-net
+    internal: true # Talaba laboratoriyalari baza va tashqi tarmoqqa ulana olmaydi!
+
+# ── DOIMIY SAQLASH XOTIRASI ────────────────────────────────────────────────
+volumes:
+  cyberedu_prod_pgdata:
+    name: cyberedu_prod_pgdata
+  cyberedu_prod_videos:
+    name: cyberedu_prod_videos
+  cyberedu_prod_attachments:
+    name: cyberedu_prod_attachments
+  cyberedu_prod_caddy_data:
+    name: cyberedu_prod_caddy_data
+  cyberedu_prod_caddy_config:
+    name: cyberedu_prod_caddy_config
+  cyberedu_prod_caddy_logs:
+    name: cyberedu_prod_caddy_logs

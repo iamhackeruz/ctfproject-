@@ -146,7 +146,7 @@ async function main() {
       }
     });
 
-    await instPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await instPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
 
     // Login formasini to'ldirish
     await instPage.fill("#login-email", instEmail);
@@ -199,7 +199,7 @@ async function main() {
     });
     const page2 = await instLoginContext.newPage();
 
-    await page2.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await page2.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await page2.fill("#login-email", instEmail);
     await page2.fill("#login-password", testPassword);
     await page2.click("#btn-login");
@@ -230,7 +230,7 @@ async function main() {
     });
     const page3 = await backupLoginContext.newPage();
 
-    await page3.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await page3.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await page3.fill("#login-email", instEmail);
     await page3.fill("#login-password", testPassword);
     await page3.click("#btn-login");
@@ -269,7 +269,7 @@ async function main() {
     });
 
     // Talaba sifatida kirish
-    await mobilePage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await mobilePage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await mobilePage.fill("#login-email", studentEmail);
     await mobilePage.fill("#login-password", testPassword);
     await mobilePage.click("#btn-login");

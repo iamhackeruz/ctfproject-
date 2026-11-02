@@ -156,7 +156,7 @@ async function main() {
   try {
     // ── QADAM 1: Talaba tizimga kiradi va premium darsni ochadi (Qulflangan holat) ──
     console.log("\n--- QADAM 1: Talaba darsni ochadi (Huquqsiz, Dars Qulflangan) ---");
-    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await studentPage.fill('input[type="email"], #login-email', student.email);
     await studentPage.fill('input[type="password"], #login-password', studentPass);
     await studentPage.click('button[type="submit"]:has-text("Kirish")');
@@ -164,7 +164,7 @@ async function main() {
     assert(studentPage.url().includes("/dashboard"), "Talaba muvaffaqiyatli login qildi");
 
     // Talaba premium dars sahifasiga o'tadi
-    await studentPage.goto(`${BASE_URL}/courses/${course.id}/learn`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/courses/${course.id}/learn`, { waitUntil: "domcontentloaded" });
 
     // Dars qulflanganligini tekshirish
     const lockedHeader = studentPage.locator("h3:has-text('Dars Qulflangan')");
@@ -180,7 +180,7 @@ async function main() {
 
     // ── QADAM 2: Admin UI orqali talabaga Premium huquqini beradi ──
     console.log("\n--- QADAM 2: Admin UI orqali talabaga Premium obuna beradi ---");
-    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await adminPage.fill('input[type="email"], #login-email', admin.email);
     await adminPage.fill('input[type="password"], #login-password', adminPass);
     await adminPage.click('button[type="submit"]:has-text("Kirish")');
@@ -211,7 +211,7 @@ async function main() {
 
     // ── QADAM 3: Talaba darsni yangilaydi, dars ochiladi va quiz topshiradi ──
     console.log("\n--- QADAM 3: Talaba sahifani yangilaydi, dars ochiladi va test topshiradi ---");
-    await studentPage.reload({ waitUntil: "networkidle" });
+    await studentPage.reload({ waitUntil: "domcontentloaded" });
 
     // Dars endi qulflanmagan bo'lishi kerak
     await studentPage.waitForSelector('text=Maxfiy Kiber Himoya Darsi', { timeout: 8000 });
@@ -253,7 +253,7 @@ async function main() {
 
     // ── QADAM 5: Talaba sahifani yangilaganda dars yana qulflanishi ──
     console.log("\n--- QADAM 5: Talaba sahifani yangilaydi va dars yana qulflanadi ---");
-    await studentPage.reload({ waitUntil: "networkidle" });
+    await studentPage.reload({ waitUntil: "domcontentloaded" });
 
     const lockedAgainHeader = studentPage.locator("h3:has-text('Dars Qulflangan')");
     await lockedAgainHeader.waitFor({ state: "visible", timeout: 8000 });

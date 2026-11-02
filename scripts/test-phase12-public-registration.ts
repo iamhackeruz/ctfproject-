@@ -398,7 +398,7 @@ async function main() {
     const pwEmail = `pw_user_${ts}@cyberedu.uz`;
 
     // 6.1 Ro'yxatdan o'tish sahifasini ochish
-    await page.goto(`${BASE_URL}/register`);
+    await page.goto(`${BASE_URL}/register`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("form");
     assert(page.url().includes("/register"), "Brauzer /register sahifasiga o'tdi");
 
@@ -432,7 +432,7 @@ async function main() {
     });
 
     // 6.2 Brauzerda /verify-email sahifasiga o'tish
-    await page.goto(`${BASE_URL}/verify-email?token=${pwTokenPair.rawToken}`);
+    await page.goto(`${BASE_URL}/verify-email?token=${pwTokenPair.rawToken}`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("text=Muvaffaqiyatli Tasdiqlandi!", { timeout: 10000 });
     assert(await page.isVisible("text=Muvaffaqiyatli Tasdiqlandi!"), "UIda 'Muvaffaqiyatli Tasdiqlandi!' yozuvi ko'rindi");
 

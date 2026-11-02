@@ -593,8 +593,8 @@ cd /home/deploy/sayt
 # 1. Yangi teglarni olish:
 git fetch --tags
 
-# 2. Chiqarilgan rasmiy versiya tegiga o'tish (masalan, v0.1-pilot):
-git checkout tags/v0.1-pilot
+# 2. Chiqarilgan rasmiy versiya tegiga o'tish (masalan, v0.2-pilot):
+git checkout tags/v0.2-pilot
 
 # 3. Prisma migratsiyalarini qo'llash:
 docker compose -f docker-compose.yml run --rm app npx prisma migrate deploy

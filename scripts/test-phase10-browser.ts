@@ -134,13 +134,7 @@ async function main() {
     await teacherPage.fill("#login-email", teacherEmail);
     await teacherPage.fill("#login-password", adminPass);
 
-    const [authRes] = await Promise.all([
-      teacherPage.waitForResponse((r) => r.url().includes("/api/auth")),
-      teacherPage.click('button[type="submit"]:has-text("Kirish")'),
-    ]);
-    const authData = await authRes.json();
-    console.log("Teacher login auth response:", authData);
-
+    await teacherPage.click('button[type="submit"]:has-text("Kirish")');
     await teacherPage.waitForURL("**/dashboard**", { timeout: 10000 });
     assert(teacherPage.url().includes("/dashboard"), "Ustoz muvaffaqiyatli dashboardga kirdi");
 

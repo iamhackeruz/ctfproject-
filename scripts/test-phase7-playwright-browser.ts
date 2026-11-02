@@ -63,7 +63,7 @@ async function runPhase7BrowserSuite() {
     });
 
     const { adminEmail, adminPass } = getTestCredentials();
-    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await adminPage.fill('input[type="email"], input[type="text"]', adminEmail);
     await adminPage.fill('input[type="password"]', adminPass);
     await adminPage.click('button[type="submit"]');
@@ -149,7 +149,7 @@ async function runPhase7BrowserSuite() {
     const studentContext: BrowserContext = await browser.newContext();
     const studentPage: Page = await studentContext.newPage();
 
-    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await studentPage.fill('input[type="email"], input[type="text"]', "student@cyberedu.uz");
     await studentPage.fill('input[type="password"]', "Student#2026!Pass");
     await studentPage.click('button[type="submit"]');
@@ -174,7 +174,7 @@ async function runPhase7BrowserSuite() {
 
     // ── [7] TALABA DARSLARDA Q&A (SAVOL-JAVOB) BO'LIMI ───────────────────────
     console.log("\n[7] Talaba Dars Sahifasida Q&A (Savol-Javob) Bo'limi:");
-    await studentPage.goto(`${BASE_URL}/courses/1/learn`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/courses/1/learn`, { waitUntil: "domcontentloaded" });
     const learnContent = await studentPage.textContent("body");
     assert(learnContent?.includes("Savol-Javoblar"), "Dars o'rganish sahifasida Savol-Javoblar tabi mavjud");
 

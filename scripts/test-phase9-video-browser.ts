@@ -163,7 +163,7 @@ async function main() {
     });
 
     // 1.1 Login sahifasi
-    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await adminPage.fill("#login-email", adminEmail);
     await adminPage.fill("#login-password", adminPass);
     await adminPage.click('button[type="submit"]:has-text("Kirish")');
@@ -230,7 +230,7 @@ async function main() {
     });
 
     // 2.1 Talaba tizimga kiradi
-    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await studentPage.fill("#login-email", studentEmail);
     await studentPage.fill("#login-password", studentPass);
     await studentPage.click('button[type="submit"]:has-text("Kirish")');
@@ -238,7 +238,7 @@ async function main() {
     console.log("  [+] Talaba tizimga kirdi");
 
     // 2.2 Dars sahifasiga o'tish (Hali huquq yo'q)
-    await studentPage.goto(`${BASE_URL}/courses/${course.id}/learn`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/courses/${course.id}/learn`, { waitUntil: "domcontentloaded" });
     await studentPage.waitForTimeout(1000);
 
     const lockedText = studentPage.locator("text=Premium obuna talab etiladi");
@@ -258,7 +258,7 @@ async function main() {
     });
     console.log("  [+] Talabaga Premium obuna berildi, sahifa yangilanmoqda...");
 
-    await studentPage.reload({ waitUntil: "networkidle" });
+    await studentPage.reload({ waitUntil: "domcontentloaded" });
     await studentPage.waitForTimeout(1500);
 
     // 3.1 Video element mavjudligi
@@ -311,7 +311,7 @@ async function main() {
     }, lesson.id);
 
     // Sahifani yangilash
-    await studentPage.reload({ waitUntil: "networkidle" });
+    await studentPage.reload({ waitUntil: "domcontentloaded" });
     await studentPage.waitForTimeout(1500);
 
     // Yangilangandan so'ng video player tiklandi
@@ -331,7 +331,7 @@ async function main() {
     });
     console.log("  [-] Talabaning huquqi bekor qilindi, sahifa yangilanmoqda...");
 
-    await studentPage.reload({ waitUntil: "networkidle" });
+    await studentPage.reload({ waitUntil: "domcontentloaded" });
     await studentPage.waitForTimeout(1500);
 
     const reLockedText = studentPage.locator("text=Premium obuna talab etiladi");

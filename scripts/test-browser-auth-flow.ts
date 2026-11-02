@@ -80,7 +80,7 @@ async function runBrowserAuthSuite() {
       }
     });
 
-    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await adminPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     assert(adminCspViolations.length === 0, "Login sahifasida birorta ham CSP xatosi yuz bermadi.");
 
     await adminPage.fill("#login-email", adminEmail);
@@ -119,7 +119,7 @@ async function runBrowserAuthSuite() {
     const studentContext = await browser.newContext();
     const studentPage = await studentContext.newPage();
 
-    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await studentPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await studentPage.fill("#login-email", "student@cyberedu.uz");
     await studentPage.fill("#login-password", "Student#2026!Pass");
     await studentPage.click("button[type=\"submit\"]");
@@ -151,7 +151,7 @@ async function runBrowserAuthSuite() {
     const newStudentContext = await browser.newContext();
     const newStudentPage = await newStudentContext.newPage();
 
-    await newStudentPage.goto(`${BASE_URL}/register`, { waitUntil: "networkidle" });
+    await newStudentPage.goto(`${BASE_URL}/register`, { waitUntil: "domcontentloaded" });
 
     const newEmail = `talaba_${Date.now()}@cyberedu.uz`;
     const newPass = "SuperSecure#2026!Talaba";
@@ -170,7 +170,7 @@ async function runBrowserAuthSuite() {
 
     // Chiqib ketib, yangi hisob va parol bilan qayta /login qilish
     await newStudentPage.evaluate(() => fetch("/api/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout" }) }));
-    await newStudentPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await newStudentPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
 
     await newStudentPage.fill("#login-email", newEmail);
     await newStudentPage.fill("#login-password", newPass);
@@ -190,7 +190,7 @@ async function runBrowserAuthSuite() {
     const errorContext = await browser.newContext();
     const errorPage = await errorContext.newPage();
 
-    await errorPage.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    await errorPage.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
     await errorPage.fill("#login-email", "admin@cyberedu.uz");
     await errorPage.fill("#login-password", "MutlaqoNoto'g'riParol#999");
     await errorPage.click("button[type=\"submit\"]");

@@ -200,10 +200,11 @@ networks:
   cyberedu-frontend-net:
     driver: bridge
     name: cyberedu-frontend-net
+    # Tashqi internetga chiquvchi gateway mavjud (Next.js app Telegram API va SMTP ga chiqa oladi)
   cyberedu-internal-net:
     driver: bridge
     name: cyberedu-internal-net
-    internal: true # Tashqi internetga chiqish taqiqlangan!
+    internal: true # Tashqi internetga chiqish taqiqlangan! (PostgreSQL va Sandbox Daemon butunlay yopiq)
   cyberedu-weblab-net:
     driver: bridge
     name: cyberedu-weblab-net

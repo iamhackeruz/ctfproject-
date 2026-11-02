@@ -318,6 +318,51 @@ async function runProdSecurityTests() {
     passed++;
   }
 
+  // 10. Tarmoq arxitekturasi va izolyatsiyasi tekshiruvi (app egress, postgres/daemon internal)
+  console.log("\n[10] Tarmoq arxitekturasi va izolyatsiyasi tekshiruvi:");
+  {
+    const composeContent = fs.readFileSync(path.resolve(process.cwd(), "docker-compose.yml"), "utf-8");
+
+    // A. App konteyneri tashqi dunyo (frontend-net) va ichki xizmatlar (internal-net) ga ulangan
+    const appSection = composeContent.split("\n  app:")[1]?.split("\n  postgres:")[0] || "";
+    assert(
+      appSection.includes("- cyberedu-frontend-net") && appSection.includes("- cyberedu-internal-net"),
+      "app konteyneri tashqi chiqish (frontend-net) va ichki aloqa (internal-net) tarmoqlariga ulangan"
+    );
+
+    // B. Postgres faqat va faqat cyberedu-internal-net da bo'lishi shart
+    const postgresSection = composeContent.split("\n  postgres:")[1]?.split("\n  sandbox-daemon:")[0] || "";
+    assert(
+      postgresSection.includes("- cyberedu-internal-net") && !postgresSection.includes("- cyberedu-frontend-net"),
+      "postgres faqat ichki tarmoqda (cyberedu-internal-net) bo'lishi shart"
+    );
+
+    // C. Sandbox Daemon faqat cyberedu-internal-net va cyberedu-weblab-net da bo'lishi shart
+    const daemonSection = composeContent.split("\n  sandbox-daemon:")[1]?.split("\n  caddy:")[0] || "";
+    assert(
+      daemonSection.includes("- cyberedu-internal-net") &&
+      daemonSection.includes("- cyberedu-weblab-net") &&
+      !daemonSection.includes("- cyberedu-frontend-net"),
+      "sandbox-daemon tashqi tarmoqqa chiqmasligi shart (faqat internal va weblab tarmoqlarida)"
+    );
+
+    // D. cyberedu-internal-net va cyberedu-weblab-net da internal: true mavjudligi
+    const internalNetSection = composeContent.split("cyberedu-internal-net:")[1]?.split("cyberedu-weblab-net:")[0] || "";
+    assert(
+      internalNetSection.includes("internal: true"),
+      "cyberedu-internal-net tarmog'ida internal: true qoidasi o'rnatilgan (tashqi chiqish butunlay bloklangan)"
+    );
+
+    const weblabNetSection = composeContent.split("cyberedu-weblab-net:")[1]?.split("volumes:")[0] || "";
+    assert(
+      weblabNetSection.includes("internal: true"),
+      "cyberedu-weblab-net tarmog'ida internal: true qoidasi o'rnatilgan (laboratoriyalar tashqariga chiqa olmaydi)"
+    );
+
+    console.log("  ✅ [PASS] Tarmoq izolyatsiyasi to'liq tasdiqlandi (app tashqariga chiqa oladi, postgres va daemon mutlaqo yopiq)");
+    passed++;
+  }
+
   console.log("\n========================================================");
   console.log(`PRODUCTION HIMOYALARI TESTI YAKUNLANDI: ${passed} PASS, 0 FAIL`);
   console.log("========================================================\n");

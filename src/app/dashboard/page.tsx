@@ -22,6 +22,7 @@ import UserAttendanceTab from "@/components/UserAttendanceTab";
 import UserTelegramSettings from "@/components/UserTelegramSettings";
 import AdminAssignmentsTab from "@/components/admin/AdminAssignmentsTab";
 import AdminAttendanceTab from "@/components/admin/AdminAttendanceTab";
+import { AdminHealthTab } from "@/components/admin/AdminHealthTab";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function DashboardPage() {
     | "attendance"
     | "adminAssignments"
     | "adminAttendance"
+    | "adminHealth"
   >("courses");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -721,6 +723,13 @@ export default function DashboardPage() {
                 onClick={() => setActiveTab("adminExport")}
               >
                 📊 Eksport
+              </button>
+              <button
+                type="button"
+                className={`${styles.tabBtn} ${activeTab === "adminHealth" ? styles.tabActive : ""}`}
+                onClick={() => setActiveTab("adminHealth")}
+              >
+                🖥️ Server holati
               </button>
             </>
           )}
@@ -1598,6 +1607,11 @@ export default function DashboardPage() {
         {/* Tab Content: Admin Attendance */}
         {activeTab === "adminAttendance" && (
           <AdminAttendanceTab />
+        )}
+
+        {/* Tab Content: Admin Server Health */}
+        {activeTab === "adminHealth" && (
+          <AdminHealthTab />
         )}
 
         {/* Teacher Create Course Modal */}

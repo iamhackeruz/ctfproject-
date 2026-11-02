@@ -178,6 +178,38 @@ Favqulodda holatda zaxiradan to'liq qayta tiklash:
 
 ---
 
+## 📊 Server Holatini Kuzatish (Monitoring)
+
+Platformada server va xizmatlar salomatligini real vaqt rejimida kuzatish uchun maxsus monitoring vositalari mavjud:
+
+### 1. `/api/health` Endpointi (Uptime & Docker Healthcheck)
+Tashqi monitoring tizimlari (masalan: Uptime Kuma, Prometheus Blackbox, Datadog) va Docker konteyner healthchecklari uchun mo'ljallangan:
+- **URL:** `GET /api/health`
+- **Javob (HTTP 200 OK):**
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-11-02T12:00:00.000Z",
+  "services": {
+    "database": { "status": "up", "latencyMs": 3 },
+    "sandboxDaemon": { "status": "up", "latencyMs": 5 },
+    "storage": { "status": "ok", "freePercent": 84.5 }
+  }
+}
+```
+*Xavfsizlik: Ushbu endpointda hech qanday sirlar, parollar, ichki fayl yo'llari yoki maxfiy ma'lumotlar oshkor qilinmaydi.*
+
+### 2. Administrator Panelida "Server holati" Bo'limi
+Admin hisobida `/dashboard` sahifasiga kirib, **"🖥️ Server holati"** bo'limida quyidagilarni jonli ko'rish mumkin:
+- **Ma'lumotlar bazasi (PostgreSQL 16):** Ulanish holati, kechikish va jami foydalanuvchilar soni.
+- **Sandbox Daemon (Sidecar):** Faol terminal va veb-laboratoriya seanslari soni hamda maksimal limitlar.
+- **Disk Xotirasi:** Xost diskining umumiy, ishlatilgan va bo'sh joyi (GB va foizda).
+- **Medialar Hajmi:** Dars videolari va topshiriq birikmalari (attachments) egallagan hajm.
+- **Zaxiralar va Cron:** Oxirgi avtomatik backup fayli va oxirgi cron eslatmalari ishga tushgan vaqti.
+- **Avto-yangilash:** Har 30 soniyada ma'lumotlarni avtomatik yangilash imkoniyati.
+
+---
+
 ## 🛠️ Muammolarni Bartaraf Etish (Troubleshooting)
 
 1. **"Xavfsizlik xatosi: Kriptografik maxfiy kalitlar tekshiruvdan o'tmadi"**

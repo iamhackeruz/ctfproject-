@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processReminders } from "@/lib/reminders/scheduler";
 import { getReliableClientIp } from "@/lib/security/client-ip";
+import { recordAuditLog } from "@/lib/security/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,17 @@ async function handleReminders(req: NextRequest): Promise<NextResponse> {
 
   try {
     const result = await processReminders();
+    await recordAuditLog({
+      action: "CRON_REMINDERS_RUN",
+      details: {
+        due24h: result.due24hSent,
+        due2h: result.due2hSent,
+        entitlements: result.expiringEntitlementsSent,
+        skipped: result.skippedDuplicates,
+      },
+      ip: clientIp || "127.0.0.1",
+    }).catch(() => {});
+
     return NextResponse.json({
       success: true,
       result,

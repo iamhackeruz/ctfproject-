@@ -145,7 +145,8 @@ export type AuditAction =
   | "2FA_VERIFY"
   | "2FA_BACKUP_LOGIN"
   | "2FA_RESET_BY_ADMIN"
-  | "2FA_RESET_SHELL";
+  | "2FA_RESET_SHELL"
+  | "CRON_REMINDERS_RUN";
 
 /**
  * Tizim xavfsizlik audit logini qayd etish (Baza va Fayl rotatsiyasi).

@@ -306,7 +306,7 @@ async function runProdSecurityTests() {
     try {
       execSync("docker compose config --quiet", {
         cwd: process.cwd(),
-        env: { PATH: process.env.PATH },
+        env: { PATH: process.env.PATH, NODE_ENV: "production" } as NodeJS.ProcessEnv,
         stdio: "pipe",
       });
     } catch {

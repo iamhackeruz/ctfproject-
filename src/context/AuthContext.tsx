@@ -18,7 +18,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, role?: string, name?: string) => Promise<boolean>;
   loginWithCredentials: (emailOrUsername: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  registerUser: (name: string, email: string, password: string, inviteCode?: string) => Promise<{ success: boolean; error?: string; message?: string }>;
+  registerUser: (name: string, email: string, password: string, inviteCode?: string, captchaToken?: string) => Promise<{ success: boolean; error?: string; message?: string; requiresEmailVerification?: boolean }>;
   loginWithUser: (userData: User) => void;
   updateUser: (updates: Partial<User>) => void;
   logout: () => Promise<void>;
@@ -136,17 +136,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Ro'yxatdan o'tish
-  const registerUser = async (name: string, email: string, password: string, inviteCode?: string) => {
+  const registerUser = async (name: string, email: string, password: string, inviteCode?: string, captchaToken?: string) => {
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "register", name, email, password, inviteCode }),
+        body: JSON.stringify({ action: "register", name, email, password, inviteCode, captchaToken }),
       });
       const data = await res.json();
       if (data.success) {
-        await refreshUser();
-        return { success: true, message: data.message };
+        if (!data.requiresEmailVerification) {
+          await refreshUser();
+        }
+        return { success: true, requiresEmailVerification: !!data.requiresEmailVerification, message: data.message };
       }
       return { success: false, error: data.error || "Ro'yxatdan o'tishda xatolik." };
     } catch {

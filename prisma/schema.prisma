@@ -94,6 +94,12 @@ model User {
   twoFactorFailedAttempts Int              @default(0)
   twoFactorLockoutUntil DateTime?
   twoFactorLastUsedStep BigInt?
+  emailVerified       Boolean              @default(true)
+  verificationTokenHash String?            @unique
+  verificationExpires DateTime?
+  registrationIp      String?
+  dailyTerminalQuotaMinutes Int            @default(60)
+  dailyLabQuotaMinutes Int                 @default(30)
   telegramChatId      String?              @unique
   telegramUsername    String?
   telegramConnectedAt DateTime?
@@ -131,6 +137,8 @@ model User {
 
   @@index([role])
   @@index([isBlocked])
+  @@index([emailVerified])
+  @@index([registrationIp, createdAt])
   @@map("users")
 }
 

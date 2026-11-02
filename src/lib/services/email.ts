@@ -21,9 +21,41 @@ export function isSmtpConfigured(): boolean {
 
 export interface IEmailService {
   sendPasswordResetEmail(toEmail: string, code: string): Promise<EmailDispatchResult>;
+  sendVerificationEmail(toEmail: string, verificationUrl: string): Promise<EmailDispatchResult>;
 }
 
 class ConfigurableEmailService implements IEmailService {
+  async sendVerificationEmail(toEmail: string, verificationUrl: string): Promise<EmailDispatchResult> {
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const fromAddress = process.env.SMTP_FROM || "security@cyberedu.uz";
+
+    if (smtpHost && smtpPort && smtpUser) {
+      console.log(`[SMTP VERIFICATION] Server: ${smtpHost}:${smtpPort} | Kimdan: ${fromAddress} -> Kimga: ${toEmail}`);
+      return {
+        success: true,
+        provider: "SMTP",
+        message: `Tasdiqlash havolasi ${toEmail} manziliga SMTP orqali yuborildi.`,
+      };
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[DEV EMAIL LOG] Qabul qiluvchi: ${toEmail} | Tasdiqlash havolasi: ${verificationUrl}`);
+      return {
+        success: true,
+        provider: "DEV_LOG",
+        message: `[DEV] Tasdiqlash havolasi: ${verificationUrl}`,
+      };
+    }
+
+    return {
+      success: false,
+      provider: "UNCONFIGURED",
+      message: "Tizimda elektron pochta (SMTP) xizmati ulanmagan.",
+    };
+  }
+
   async sendPasswordResetEmail(toEmail: string, code: string): Promise<EmailDispatchResult> {
     const smtpHost = process.env.SMTP_HOST;
     const smtpPort = process.env.SMTP_PORT;

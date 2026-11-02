@@ -1,12 +1,14 @@
 import { prisma } from "../db";
 import { NotificationType, NotificationChannel, Role } from "@prisma/client";
 import { enqueueNotification } from "../notifications/notification-service";
+import { pruneUnverifiedAccounts } from "../services/email-verification";
 
 export interface ReminderProcessResult {
   due24hSent: number;
   due2hSent: number;
   expiringEntitlementsSent: number;
   skippedDuplicates: number;
+  unverifiedPruned?: number;
 }
 
 /**
@@ -249,10 +251,19 @@ export async function processReminders(): Promise<ReminderProcessResult> {
     }
   }
 
+  // ── 3. 7 KUNDAN OSHGAN TASDIQLANMAGAN HISOBLARNI TOZALASH ───────────────
+  let unverifiedPruned = 0;
+  try {
+    unverifiedPruned = await pruneUnverifiedAccounts();
+  } catch (err) {
+    console.error("[PRUNING XATOSI]", err);
+  }
+
   return {
     due24hSent,
     due2hSent,
     expiringEntitlementsSent,
     skippedDuplicates,
+    unverifiedPruned,
   };
 }

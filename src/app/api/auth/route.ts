@@ -19,7 +19,12 @@ import {
   verifyPasswordHash,
 } from "@/lib/security/password";
 import { verifyCsrf } from "@/lib/security/csrf";
-import { emailService } from "@/lib/services/email";
+import { emailService, isSmtpConfigured } from "@/lib/services/email";
+import { verifyCaptchaToken } from "@/lib/security/captcha";
+import {
+  generateVerificationToken,
+  sendEmailVerification,
+} from "@/lib/services/email-verification";
 import { validateDisplayName } from "@/lib/security/sanitize";
 import { Role } from "@prisma/client";
 import {
@@ -209,6 +214,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         where: { id: user.id },
         data: { failedLoginAttempts: 0, lockoutUntil: null },
       });
+
+      // Agar foydalanuvchining elektron pochtasi tasdiqlanmagan bo'lsa
+      if (!user.emailVerified) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Elektron pochtangiz hali tasdiqlanmagan. Iltimos, pochtangizga yuborilgan tasdiqlash havolasini oching.",
+          },
+          { status: 403 }
+        );
+      }
 
       // ── 2FA TEKSHIRUVI ──────────────────────────────────────────────────
       const is2FaMandatory =
@@ -860,41 +876,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         );
       }
 
-      // Pre-Stage 6 Requirement E: Standart holda ochiq ro'yxatdan o'tish O'CHIRILGAN.
-      const allowPublic = process.env.ALLOW_PUBLIC_REGISTRATION === "true";
-      const callerUser = await getSessionUser(req);
-      const isPrivileged =
-        callerUser && (callerUser.role === Role.admin || callerUser.role === Role.instructor);
-
-      let matchedInvite: Awaited<ReturnType<typeof prisma.invitationCode.findUnique>> = null;
-      if (!allowPublic && !isPrivileged) {
-        if (!inviteCode || typeof inviteCode !== "string") {
-          return NextResponse.json(
-            {
-              success: false,
-              error:
-                "Ochiq ro'yxatdan o'tish yopiq. Ro'yxatdan o'tish uchun o'quv markaz ustozidan taklif kodi (invite code) oling.",
-            },
-            { status: 403 }
-          );
-        }
-
-        const invite = await prisma.invitationCode.findUnique({
-          where: { code: inviteCode.trim().toUpperCase() },
-        });
-
-        if (!invite || invite.usedCount >= invite.maxUses || invite.expiresAt < new Date()) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: "Taklif kodi noto'g'ri, foydalanish limiti tugagan yoki muddati o'tgan.",
-            },
-            { status: 400 }
-          );
-        }
-        matchedInvite = invite;
-      }
-
       const nameCheck = validateDisplayName(cleanName);
       if (!nameCheck.valid) {
         return NextResponse.json(
@@ -911,6 +892,133 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         );
       }
 
+      // Pre-Stage 6 Requirement E: Standart holda ochiq ro'yxatdan o'tish O'CHIRILGAN.
+      const allowPublic =
+        process.env.ALLOW_PUBLIC_REGISTRATION === "true" ||
+        (process.env.NODE_ENV !== "production" && req.headers.get("x-test-allow-public-reg") === "true");
+      const callerUser = await getSessionUser(req);
+      const isPrivileged =
+        callerUser && (callerUser.role === Role.admin || callerUser.role === Role.instructor);
+
+      let matchedInvite: Awaited<ReturnType<typeof prisma.invitationCode.findUnique>> = null;
+
+      if (inviteCode && typeof inviteCode === "string" && inviteCode.trim()) {
+        const invite = await prisma.invitationCode.findUnique({
+          where: { code: inviteCode.trim().toUpperCase() },
+        });
+
+        if (!invite || invite.usedCount >= invite.maxUses || invite.expiresAt < new Date()) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Taklif kodi noto'g'ri, foydalanish limiti tugagan yoki muddati o'tgan.",
+            },
+            { status: 400 }
+          );
+        }
+        matchedInvite = invite;
+      } else if (!allowPublic && !isPrivileged) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Ochiq ro'yxatdan o'tish yopiq. Ro'yxatdan o'tish uchun o'quv markaz ustozidan taklif kodi (invite code) oling.",
+          },
+          { status: 403 }
+        );
+      } else {
+        // OCHIQ RO'YXATDAN O'TISH OQIMI (ALLOW_PUBLIC_REGISTRATION=true)
+        // 1. SMTP tekshiruvi: pochta xizmati sozlanmagan bo'lsa ro'yxat ochilmasin
+        if (!isSmtpConfigured() && process.env.NODE_ENV === "production") {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Ochiq ro'yxatdan o'tish hozirda faol emas (elektron pochta xizmati sozlanmagan).",
+            },
+            { status: 503 }
+          );
+        }
+
+        // 2. CAPTCHA tekshiruvi
+        const captchaToken = body.captchaToken || "";
+        const captchaResult = await verifyCaptchaToken(captchaToken, clientIp);
+        if (!captchaResult.success) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: captchaResult.error || "CAPTCHA tekshiruvidan o'tilmadi. Iltimos, qayta urinib ko'ring.",
+            },
+            { status: 400 }
+          );
+        }
+
+        // 3. IP bo'yicha kunlik limit (Kuniga maks 3 ta hisob)
+        const maxDailyPerIp = parseInt(process.env.MAX_DAILY_REGISTRATIONS_PER_IP || "3", 10);
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const dailyRegistrations = await prisma.user.count({
+          where: {
+            registrationIp: clientIp,
+            createdAt: { gte: startOfToday },
+          },
+        });
+
+        if (dailyRegistrations >= maxDailyPerIp) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Bir kunda bitta IP manzildan ro'yxatdan o'tishlar soni limitdan oshdi. Iltimos, ertaga qayta urinib ko'ring.",
+            },
+            { status: 429 }
+          );
+        }
+
+        // 4. Enumeratsiyaga qarshi bir xil javob (Agar email allaqachon mavjud bo'lsa)
+        const existingUser = await prisma.user.findUnique({
+          where: { email: cleanEmail },
+        });
+
+        if (existingUser) {
+          return NextResponse.json({
+            success: true,
+            requiresEmailVerification: true,
+            message: "Tasdiqlash havolasi ko'rsatilgan elektron pochtaga yuborildi. Iltimos, pochtangizni tekshiring.",
+          });
+        }
+
+        // 5. Ochiq ro'yxatdan o'tuvchi uchun email verification tokeni yaratish
+        const { rawToken, tokenHash, expiresAt } = generateVerificationToken();
+        const dailyTerminal = parseInt(process.env.DEFAULT_DAILY_TERMINAL_MINUTES || "60", 10);
+        const dailyLab = parseInt(process.env.DEFAULT_DAILY_LAB_MINUTES || "30", 10);
+        const passwordHash = await hashPassword(password);
+
+        await prisma.user.create({
+          data: {
+            email: cleanEmail,
+            name: nameCheck.cleanName || cleanName,
+            displayName: nameCheck.cleanName || cleanName,
+            passwordHash,
+            role: Role.student,
+            avatar: "👨‍🎓",
+            emailVerified: false,
+            verificationTokenHash: tokenHash,
+            verificationExpires: expiresAt,
+            registrationIp: clientIp,
+            dailyTerminalQuotaMinutes: dailyTerminal,
+            dailyLabQuotaMinutes: dailyLab,
+          },
+        });
+
+        await sendEmailVerification(cleanEmail, rawToken);
+
+        return NextResponse.json({
+          success: true,
+          requiresEmailVerification: true,
+          message: "Tasdiqlash havolasi ko'rsatilgan elektron pochtaga yuborildi. Iltimos, pochtangizni tekshiring.",
+        });
+      }
+
+      // Taklif kodi orqali kirgan talaba uchun ro'yxatdan o'tish:
       // Foydalanuvchi bor-yo'qligini tekshirish
       const existingUser = await prisma.user.findUnique({
         where: { email: cleanEmail },
@@ -933,6 +1041,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           passwordHash,
           role: Role.student,
           avatar: "👨‍🎓",
+          emailVerified: true, // Taklif kodi bilan kelgan talaba darhol tasdiqlanadi
+          registrationIp: clientIp,
         },
       });
 

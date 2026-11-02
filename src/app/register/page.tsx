@@ -19,6 +19,8 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isVerificationPending, setIsVerificationPending] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,10 +51,15 @@ export default function RegisterPage() {
     setIsSubmitting(false);
 
     if (res.success) {
-      setIsSuccess(true);
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 800);
+      if (res.requiresEmailVerification) {
+        setIsVerificationPending(true);
+        setSuccessMsg(res.message || "Tasdiqlash havolasi elektron pochtangizga yuborildi. Iltimos, pochtangizni tekshiring.");
+      } else {
+        setIsSuccess(true);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 800);
+      }
     } else {
       setError(res.error || "Ro'yxatdan o'tishda xatolik yuz berdi.");
     }
@@ -71,7 +78,21 @@ export default function RegisterPage() {
         <h1 className={styles.title}>Hisob yarating</h1>
         <p className={styles.subtitle}>Kiberxavfsizlik o&apos;quv platformasiga xush kelibsiz!</p>
 
-        {isSuccess ? (
+        {isVerificationPending ? (
+          <div style={{ textAlign: "center", padding: "24px 0", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+            <span style={{ fontSize: "2.5rem" }}>📧</span>
+            <h2 style={{ fontSize: "1.2rem", color: "#38bdf8" }}>Elektron Pochtani Tasdiqlang</h2>
+            <p style={{ fontSize: "0.9rem", color: "#cbd5e1", lineHeight: 1.6 }}>
+              {successMsg}
+            </p>
+            <p style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
+              Xat spam papkasiga tushmaganligini tekshiring. Havola 30 daqiqa davomida amal qiladi.
+            </p>
+            <Link href="/login" className="btn btn-outline" style={{ marginTop: 12, padding: "8px 24px" }}>
+              Kirish sahifasiga o&apos;tish
+            </Link>
+          </div>
+        ) : isSuccess ? (
           <div style={{
             textAlign: "center",
             padding: "24px 0",

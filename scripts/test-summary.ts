@@ -39,6 +39,8 @@ const TEST_SUITES: SuiteConfig[] = [
   { file: "test-prod-security.ts", name: "Production: Sirlar, Socket & Tarmoq Izolyatsiyasi" },
   { file: "test-phase12-public-registration.ts", name: "12-Bosqich: Ochiq Ro'yxatdan O'tish & Verifikatsiya" },
   { file: "test-quotas-and-ip.ts", name: "Kvotalar & Ishonchli Proksi (Caddy Right-to-Left)" },
+  { file: "test-caddy-docker-ip.ts", name: "Caddy Docker: Haqiqiy Mijoz IP & Soxta XFF Himoyasi" },
+  { file: "test-prod-browser.ts", name: "Production Playwright: Strict CSP Nonce & isDev Izolyatsiyasi" },
 ];
 
 interface SuiteResult {

@@ -203,8 +203,8 @@ async function main() {
     "Aniq o'zbekcha kvota limiti xabari qaytarildi"
   );
   assert(
-    termDataBlocked.stderr.includes("00:00 da yangilanadi"),
-    "Server vaqti bilan 00:00 da yangilanishi haqida xabardor qilindi"
+    termDataBlocked.stderr.includes("Toshkent vaqti bilan 05:00"),
+    "Toshkent vaqti bilan 05:00 da yangilanishi haqida xabardor qilindi"
   );
 
   // 3.6 Ertasi kuni nolga qaytishi (Date Rollover simulyatsiyasi)

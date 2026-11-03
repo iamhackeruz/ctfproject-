@@ -92,7 +92,7 @@ Xavfsizlik va barqarorlik talablariga muvofiq, **ishlab chiqarish (Production) s
 ### Ishlab chiqish tartibi:
 1. Barcha yangi imkoniyatlar, tuzatishlar va o'zgarishlar **`dev`** shoxida olib boriladi.
 2. Barcha xavfsizlik va integratsiya testlari (`npm run test:security`) 100% muvaffaqiyatli o'tgandan so'ng, `dev` shoxi `main` shoxiga birlashtiriladi.
-3. Yangi versiya tegi belgilanadi (masalan: `git tag -a v0.2-pilot -m "CyberEdu Pilot Release v0.2-pilot"`).
+3. Yangi versiya tegi belgilanadi (masalan: `git tag -a v0.2.1-pilot -m "CyberEdu Pilot Release v0.2.1-pilot"`).
 
 ### Production serverda yangi versiyani chiqarish (Deploy from Tag):
 ```bash
@@ -101,8 +101,8 @@ cd /home/deploy/sayt
 # 1. Yangi teglarni olish:
 git fetch --tags
 
-# 2. Chiqarilgan barqaror versiya tegiga o'tish (masalan, v0.2-pilot):
-git checkout tags/v0.2-pilot
+# 2. Chiqarilgan barqaror versiya tegiga o'tish (masalan, v0.2.1-pilot):
+git checkout tags/v0.2.1-pilot
 
 # 3. Prisma migratsiyalarini qo'llash:
 docker compose -f docker-compose.yml run --rm app npx prisma migrate deploy

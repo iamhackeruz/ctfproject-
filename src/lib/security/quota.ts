@@ -94,7 +94,7 @@ export async function checkAndRecordTerminalUsage(
       remainingMinutes: 0,
       usedMinutes: used,
       quotaMinutes: quota,
-      reason: `Kunlik terminal vaqti limiti tugadi (${quota} daqiqa). Limit ertaga server vaqti bilan soat 00:00 da yangilanadi.`,
+      reason: `Kunlik terminal vaqti limiti tugadi (${quota} daqiqa). Limit ertaga Toshkent vaqti bilan 05:00 da yangilanadi.`,
     };
   }
 
@@ -185,7 +185,7 @@ export async function checkLabQuota(userId: string): Promise<QuotaCheckResult> {
       remainingMinutes: 0,
       usedMinutes: used,
       quotaMinutes: quota,
-      reason: `Kunlik laboratoriya (Web Lab) vaqti limiti tugadi (${quota} daqiqa). Limit ertaga server vaqti bilan soat 00:00 da yangilanadi.`,
+      reason: `Kunlik laboratoriya (Web Lab) vaqti limiti tugadi (${quota} daqiqa). Limit ertaga Toshkent vaqti bilan 05:00 da yangilanadi.`,
     };
   }
 

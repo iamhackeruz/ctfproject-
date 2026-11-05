@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Xodim Kabineti — Adam Smith{% endblock %}
+{% block content %}
+
+<div class="row my-4">
+    <div class="col-12">
+        <div class="alert alert-success border-success d-flex align-items-center justify-content-between p-3">
+            <div>
+                <h5 class="fw-bold mb-1"><i class="fas fa-check-circle me-2"></i> Muvaffaqiyatli Kirish! (V3 FLAG)</h5>
+                <p class="mb-0 small">Siz xodimlar portali himoyasini va rate-limitni muvaffaqiyatli aylanib o'tdingiz.</p>
+            </div>
+            <code class="fs-6 bg-dark text-warning p-2 rounded border border-warning">{{ flag_v3 }}</code>
+        </div>
+    </div>
+
+    <!-- Profil ma'lumotlari -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-4 h-100">
+            <h4 class="text-info fw-bold mb-3"><i class="fas fa-id-badge me-2"></i> Shaxsiy Xodim Ma'lumotlari</h4>
+            <table class="table table-dark table-borderless">
+                <tr><th class="text-muted">Ism:</th><td>{{ user['name'] }}</td></tr>
+                <tr><th class="text-muted">Email:</th><td>{{ user['email'] }}</td></tr>
+                <tr><th class="text-muted">Lavozim:</th><td><span class="badge bg-primary">{{ user['role'] }}</span></td></tr>
+                <tr><th class="text-muted">Bo'lim:</th><td>{{ user['department'] }}</td></tr>
+                <tr><th class="text-muted">Maosh:</th><td>{{ user['salary'] }}</td></tr>
+            </table>
+
+            <div class="mt-3">
+                <a href="/portal/employee/contract?id={{ user['id'] }}" class="btn btn-outline-info w-100" target="_blank">
+                    <i class="fas fa-file-contract me-1"></i> Shaxsiy Mehnat Shartnomasini Ko'rish (ID: {{ user['id'] }})
+                </a>
+                <p class="text-muted small mt-2">
+                    <i class="fas fa-lightbulb text-warning me-1"></i> <strong>Maslahat:</strong> Shartnomalar API orqali chaqiriladi. Boshqa xodimlar shartnomasi ham mavjudmikan?
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Xavfsizlik va Token bo'limi -->
+    <div class="col-md-6 mb-4">
+        <div class="card p-4 h-100">
+            <h4 class="text-info fw-bold mb-3"><i class="fas fa-shield-alt me-2"></i> JWT Avtorizatsiya Sessiyasi</h4>
+            <p class="text-muted small">Tizim sizga quyidagi claims lar bilan JWT sessiya tokeni berdi:</p>
+
+            <div class="bg-dark p-3 rounded font-monospace small mb-3 border border-secondary">
+                <pre class="text-info mb-0">{{ payload | tojson(indent=2) }}</pre>
+            </div>
+
+            <div class="alert alert-dark border-secondary small text-muted">
+                <strong>Eslatma:</strong> Boshqaruv kengashi (Executive Board) va server tarmoq diagnostikasi faqat <code>"role": "superadmin"</code> ruxsatiga ega xodimlar uchun ochiq:
+                <div class="mt-2">
+                    <a href="/admin/executive-board" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-user-lock me-1"></i> Boshqaruv Kengashi (/admin/executive-board)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

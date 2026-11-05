@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+bin/status — CTF v2 Ishtirokchi joriy holati va yo'nalishi
+Foydalanish: status
+"""
+
+import sys
+import os
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+sys.path.insert(0, PROJECT_ROOT)
+
+from core_db import db as ctf_db
+
+def main():
+    username = os.environ.get("SUDO_USER") or os.environ.get("USER") or "talaba1"
+    participant = ctf_db.get_participant_by_user(username)
+
+    if not participant:
+        participant = ctf_db.register_participant(username, username.capitalize())
+
+    conn = ctf_db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT c.code, c.title, c.points, s.solved_at FROM challenges c LEFT JOIN solves s ON c.id = s.challenge_id AND s.participant_id = ? ORDER BY c.id ASC", (participant["id"],))
+    challenges = cur.fetchall()
+    conn.close()
+
+    print("\n╔══════════════════════════════════════════════════════════════════╗")
+    print(f"║  📊 KIBERXAVFSIZLIK CTF v2 HOLAT — {participant['full_name']:<27} ║")
+    print("╠══════════════════════════════════════════════════════════════════╣")
+    print(f"║  👤 Foydalanuvchi: @{participant['username']:<45} ║")
+    print(f"║  🎯 Jami Ball: {participant['total_score']} ball (Web: {participant['stage2_score']}/3000 ball) {'':<16} ║")
+
+    # 1-bosqich
+    s1_tasks = ctf_db.get_stage1_progress(participant["id"])
+    s1_solved_count = sum(1 for t in s1_tasks if t["solved"])
+    total_s1_pts = sum(t["points"] for t in s1_tasks if t["solved"])
+    if participant["stage1_solved"]:
+        print("║  ✅ 1-BOSQICH (Linux Asoslari): [TO'LIQ YAKUNLANDI] (+500b)        ║")
+    else:
+        print(f"║  🐧 1-BOSQICH (Linux Asoslari — {s1_solved_count}/{len(s1_tasks)} topshiriq, {total_s1_pts} ball):          ║")
+        for t in s1_tasks:
+            mark = "✔" if t["solved"] else " "
+            print(f"║     [{mark}] {t['code']}: {t['title'][:34]:<34} (+{t['points']}b) ║")
+
+    # 2-bosqich Web holati
+    print("╠══════════════════════════════════════════════════════════════════╣")
+    print("║  🌐 2-BOSQICH (WEB PENTEST — 10 TA ZAIFLIK MATRIXI):             ║")
+    solved_count = 0
+    for ch in challenges:
+        if ch["solved_at"]:
+            solved_count += 1
+            print(f"║     [✔] {ch['code']:<3}: {ch['title'][:34]:<34} (+{ch['points']}b) ║")
+        else:
+            print(f"║     [ ] {ch['code']:<3}: {ch['title'][:34]:<34} ( {ch['points']}b) ║")
+
+    print(f"║  Natija: {solved_count}/10 zaiflik hal etildi ({participant['stage2_score']} ball) {'':<22} ║")
+
+    # 3-bosqich
+    print("╠══════════════════════════════════════════════════════════════════╣")
+    if participant["report_file"]:
+        print(f"║  📄 3-BOSQICH (Reporting): [TOPSHIRILDI] (+{participant['report_score']} hakam balli) {'':<6} ║")
+    elif participant["stage3_unlocked"]:
+        print("║  🔓 3-BOSQICH (Reporting): [RUXSAT OCHILDI - Hisobot kutilmoqda] ║")
+    else:
+        qolgan = max(0, 1200 - participant["stage2_score"])
+        print(f"║  🔒 3-BOSQICH (Reporting): [QULFLANGAN - Yana {qolgan} ball kerak]   ║")
+
+    print("╚══════════════════════════════════════════════════════════════════╝\n")
+
+if __name__ == "__main__":
+    main()

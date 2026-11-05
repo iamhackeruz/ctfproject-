@@ -1,0 +1,31 @@
+services:
+  # 2-Bosqich: Zaifliklar bilan to'la Korporativ Veb Ilova (Apex Global Technologies)
+  apex-web-target:
+    build:
+      context: .
+      dockerfile: stage2_web/Dockerfile
+    container_name: ctf_v2_web_target
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - APEX_PORT=5000
+      - CTF_DB_PATH=/var/ctf/ctf_v2.db
+    volumes:
+      - /var/ctf:/var/ctf
+
+  # Katta Ekran (Projektor) Jonli Hujum Matritsasi va Hakamlar Dashboardi
+  live-dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    container_name: ctf_v2_live_matrix
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DASHBOARD_PORT=8080
+      - CTF_DB_PATH=/var/ctf/ctf_v2.db
+      - ADMIN_PASSWORD=admin2026
+    volumes:
+      - /var/ctf:/var/ctf

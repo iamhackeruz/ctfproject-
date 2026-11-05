@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Xizmatlar katalogi — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row my-4">
+    <div class="col-12 text-center mb-4">
+        <h2 class="fw-bold">Xizmatlar va Maxsulotlar Katalogi</h2>
+        <p class="text-muted">Kompaniyamizning barcha kiberxavfsizlik va bulutli xizmatlari</p>
+
+        <!-- Qidiruv formasi (SQL Injection Vulnerable) -->
+        <div class="row justify-content-center mt-3">
+            <div class="col-md-7">
+                <form action="/services/search" method="GET" class="d-flex gap-2">
+                    <input type="text" name="q" class="form-control bg-dark text-white border-secondary"
+                           placeholder="Xizmat nomi yoki toifasi bo'yicha qidirish..." value="{{ query or '' }}">
+                    <button type="submit" class="btn btn-cyan px-4"><i class="fas fa-search me-1"></i> Qidirish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="col-12">
+        <div class="alert alert-danger font-monospace">
+            <i class="fas fa-bug me-2"></i> {{ error }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if query %}
+    <div class="col-12 mb-3">
+        <p class="text-muted small">Qidiruv natijasi: <strong>"{{ query }}"</strong> bo'yicha</p>
+    </div>
+    {% endif %}
+
+    {% for s in services %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 p-3">
+            <div class="card-body">
+                <span class="badge bg-secondary mb-2">{{ s[2] if s is sequence else s['category'] }}</span>
+                <h5 class="card-title text-white fw-bold">{{ s[1] if s is sequence else s['title'] }}</h5>
+                <p class="card-text text-muted small">{{ s[3] if s is sequence else s['description'] }}</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    {% if not error %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="fas fa-search fa-3x mb-3 text-secondary"></i>
+        <p>Hech qanday xizmat topilmadi.</p>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+
+{% endblock %}

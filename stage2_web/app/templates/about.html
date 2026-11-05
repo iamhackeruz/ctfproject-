@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Kompaniya haqida — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row py-4">
+    <div class="col-lg-8 mx-auto">
+        <h2 class="fw-bold mb-4 text-center">Apex Global Technologies haqida</h2>
+
+        <div class="card p-4 mb-4">
+            <h4 class="text-info fw-bold mb-3"><i class="fas fa-history me-2"></i> Tariximiz va Maqsadimiz</h4>
+            <p class="text-muted">
+                Apex Global Technologies 2021-yilda kiberxavfsizlik sohasidagi yetakchi mutaxassislar tomonidan asos solingan.
+                Kompaniyamiz bosh qarorgohi Londonda joylashgan bo'lib, butun dunyo bo'ylab 100 dan ortiq yirik banklar va korporatsiyalarga
+                bulutli shifrlash va xavfsizlik arxitekturasini yetkazib beradi.
+            </p>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h4 class="text-info fw-bold mb-3"><i class="fas fa-users-cog me-2"></i> Xavfsizlik bo'limi va Muhandislar</h4>
+            <div class="mb-3">
+                <h5 class="text-white">Adam Smith — Katta Tizim Muhandisi (Cloud Infrastructure)</h5>
+                <p class="text-muted small">
+                    Adam Smith kompaniyaga <strong>2026-yilning bahorida (spring 2026)</strong> qo'shildi. U barcha ichki serverlar,
+                    Linux muhitlari va zaxira nusxalar nazoratini yuritadi. Uning xizmat pochtasi: <code>asmith@apextech.com</code>.
+                </p>
+                <div class="alert alert-dark border-secondary small text-muted">
+                    <i class="fas fa-quote-left me-2"></i> "Har bir xodim o'z ish o'rniga faqat ichki korporativ xodimlar portali (Staff Portal) orqali kirishi va bahorgi rejalashtirish parollariga rioya qilishi shart." — <em>A. Smith, 2026</em>
+                </div>
+            </div>
+            <hr class="border-secondary">
+            <div class="mb-2">
+                <h5 class="text-white">Dr. Robert Vance — Bosh Ijrochi Direktor (CEO)</h5>
+                <p class="text-muted small">
+                    Dr. Vance kompaniyaning barcha maxfiy shartnomalari, yillik byudjetlari va strategik qarorlariga bevosita javobgardir.
+                    Uning barcha shaxsiy shartnomalari tizimda ID=1 kodi ostida maxsus muhofaza qilinadi.
+                </p>
+            </div>
+        </div>
+
+        <div class="card p-4">
+            <h4 class="text-info fw-bold mb-3"><i class="fas fa-file-contract me-2"></i> Ichki Hujjatlar va Reglament</h4>
+            <p class="text-muted small mb-2">Barcha ochiq hujjatlar va sertifikatlar markaziy omborda mavjud:</p>
+            <ul class="list-unstyled">
+                <li><i class="fas fa-file-pdf text-danger me-2"></i> <a href="/download?doc=privacy.pdf" class="text-info text-decoration-none">privacy.pdf</a> (Maxfiylik Nizomi)</li>
+                <li><i class="fas fa-file-pdf text-danger me-2"></i> <a href="/download?doc=annual_report.pdf" class="text-info text-decoration-none">annual_report.pdf</a> (Yillik Hisobot 2026)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

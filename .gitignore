@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Environment and sensitive secrets
+.env.local
+*.log
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+load_test_results.json
+
+# OS specific
+.DS_Store
+Thumbs.db

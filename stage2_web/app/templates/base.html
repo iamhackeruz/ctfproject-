@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Apex Global Technologies{% endblock %} — Enterprise Cloud & Security</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: #111927;
+            --cyan-accent: #00f2fe;
+            --blue-accent: #4facfe;
+            --text-muted: #8da2be;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            background: rgba(17, 25, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--cyan-accent), var(--blue-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.4rem;
+        }
+        .nav-link {
+            color: #cbd5e1 !important;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            color: var(--cyan-accent) !important;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+        .btn-cyan {
+            background: linear-gradient(135deg, var(--cyan-accent), var(--blue-accent));
+            color: #031122;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s;
+        }
+        .btn-cyan:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+            color: #031122;
+        }
+        footer {
+            margin-top: auto;
+            background-color: #080c14;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 25px 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+            font-weight: 700;
+            border-radius: 50px;
+            padding: 12px 24px;
+            box-shadow: 0 8px 25px rgba(255, 65, 108, 0.5);
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-shield-halved me-2"></i>APEX GLOBAL TECH</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Asosiy</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/services"><i class="fas fa-server me-1"></i> Xizmatlar</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/about"><i class="fas fa-building me-1"></i> Kompaniya</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/support/ticket"><i class="fas fa-headset me-1"></i> Qo'llab-quvvatlash</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/careers/apply"><i class="fas fa-briefcase me-1"></i> Karyera</a></li>
+                    <li class="nav-item"><a class="nav-link text-warning fw-bold" href="/challenges"><i class="fas fa-crosshairs me-1"></i> Zaifliklar Xaritasi (10 ta)</a></li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <a href="/challenges" class="btn btn-warning btn-sm px-3 fw-bold text-dark"><i class="fas fa-crosshairs me-1"></i> Topshiriqlar</a>
+                    <a href="/portal/staff-login" class="btn btn-outline-info btn-sm px-3"><i class="fas fa-user-lock me-1"></i> Xodimlar Portali</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Asosiy Kontent -->
+    <div class="container my-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Tezkor Flag topshirish tugmasi -->
+    <button class="flag-btn" data-bs-toggle="modal" data-bs-target="#flagModal">
+        <i class="fas fa-flag me-2"></i> FLAG TOPSHIRISH
+    </button>
+
+    <!-- Flag Modal -->
+    <div class="modal fade" id="flagModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background-color: #111927; border: 1px solid #00f2fe; color: white;">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="fas fa-flag text-danger me-2"></i> CTF Flagini Tekshirish</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="flagAlert" class="alert d-none"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Ishtirokchi Login (Username):</label>
+                        <input type="text" id="flagUser" class="form-control bg-dark text-white border-secondary" placeholder="masalan: talaba1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Topilgan Flag (FLAG{...}):</label>
+                        <input type="text" id="flagInput" class="form-control bg-dark text-white border-secondary" placeholder="FLAG{...}">
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+                    <button type="button" class="btn btn-cyan" onclick="submitFlag()">Tekshirish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2026 Apex Global Technologies Inc. Barcha huquqlar himoyalangan.</p>
+            <p class="small text-muted mb-0">Maxfiylik siyosati: <a href="/download?doc=privacy.pdf" class="text-info text-decoration-none">privacy.pdf</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function submitFlag() {
+            const username = document.getElementById('flagUser').value.trim();
+            const flag = document.getElementById('flagInput').value.trim();
+            const alertBox = document.getElementById('flagAlert');
+
+            if (!username || !flag) {
+                alertBox.className = "alert alert-warning";
+                alertBox.innerText = "Iltimos, login va flagni kiriting!";
+                alertBox.classList.remove('d-none');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/ctf/submit-flag', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: username, flag: flag})
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alertBox.className = "alert alert-success";
+                    alertBox.innerText = data.message;
+                } else {
+                    alertBox.className = "alert alert-danger";
+                    alertBox.innerText = data.message;
+                }
+                alertBox.classList.remove('d-none');
+            } catch (err) {
+                alertBox.className = "alert alert-danger";
+                alertBox.innerText = "Server bilan aloqa xatosi: " + err;
+                alertBox.classList.remove('d-none');
+            }
+        }
+    </script>
+</body>
+</html>

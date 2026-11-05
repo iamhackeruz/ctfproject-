@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""
+bin/ctf-reset — CTF v2 Ishtirokchi muhitini yangilash va 1-bosqichni qayta o'rnatish
+Foydalanish:
+  ctf-reset               <- 1-bosqich (apex_corp) ni yangi 7 ta topshiriqqa o'tkazadi
+  ctf-reset --all         <- Barcha ballar va topshiriqlarni butunlay boshidan boshlaydi
+  ctf-reset <talaba_nomi> <- Admin boshqa talabani yangilashi uchun
+  ctf-reset --all-users   <- Admin barcha talabalarni yangi 1-bosqichga o'tkazishi uchun
+"""
+
+import sys
+import os
+import subprocess
+import pwd
+
+PROJECT_ROOT = "/opt/ctf-v2" if os.path.exists("/opt/ctf-v2/core_db") else os.getenv("CTF_PROJECT_ROOT", "/home/user/ctf-v2")
+if not os.path.exists(os.path.join(PROJECT_ROOT, "core_db")):
+    for p in ["/opt/ctf-v2", "/home/user/ctf-v2", "/var/ctf"]:
+        if os.path.exists(os.path.join(p, "core_db")):
+            PROJECT_ROOT = p
+            break
+sys.path.insert(0, PROJECT_ROOT)
+
+from core_db import db as ctf_db
+
+def get_current_user():
+    # Faqat jarayon root (UID 0) tomonidan boshqarilgandagina SUDO_USER olinadi
+    if os.getuid() == 0:
+        sudo_user = os.environ.get("SUDO_USER")
+        if sudo_user and sudo_user != "root":
+            return sudo_user
+    try:
+        return pwd.getpwuid(os.getuid()).pw_name
+    except Exception:
+        return os.environ.get("USER", "user")
+
+def reset_student(username: str, mode: str = "stage1"):
+    home_dir = f"/home/{username}"
+    if not os.path.exists(home_dir):
+        print(f"❌ Xatolik: {home_dir} katalogi topilmadi!")
+        return False
+
+    participant = ctf_db.get_participant_by_user(username)
+    if not participant:
+        participant = ctf_db.register_participant(username, username.capitalize())
+
+    conn = ctf_db.get_connection()
+    cur = conn.cursor()
+
+    if mode == "all":
+        # Butunlay nollash (1- va 2-bosqich)
+        cur.execute("DELETE FROM stage1_solves WHERE participant_id = ?", (participant["id"],))
+        cur.execute("DELETE FROM solves WHERE participant_id = ?", (participant["id"],))
+        cur.execute("DELETE FROM attempts WHERE participant_id = ?", (participant["id"],))
+        cur.execute("""
+            UPDATE participants
+            SET current_stage = 1,
+                stage1_solved = 0,
+                stage1_flag = NULL,
+                stage1_time = NULL,
+                stage2_score = 0,
+                stage3_unlocked = 0,
+                report_file = NULL,
+                report_submitted_at = NULL,
+                report_score = 0,
+                total_score = 0
+            WHERE id = ?
+        """, (participant["id"],))
+        print(f"[*] @{username} — Barcha natijalar va urinishlar to'liq nollanib 1-bosqichga qaytarildi.")
+    else:
+        # Faqat 1-bosqichni yangilash va qayta ishlash uchun tayyorlash
+        cur.execute("DELETE FROM stage1_solves WHERE participant_id = ?", (participant["id"],))
+        
+        # Agar talaba avval 1-bosqichni eski tizimda yechgan bo'lsa, uning 500 balli ayiriladi
+        # toki yangi 7 ta topshiriqni ishlab qayta 500 ball to'play olsin.
+        old_stage1_pts = 500 if participant["stage1_solved"] else 0
+        new_total = max(0, participant["total_score"] - old_stage1_pts)
+
+        cur.execute("""
+            UPDATE participants
+            SET stage1_solved = 0,
+                stage1_flag = NULL,
+                stage1_time = NULL,
+                current_stage = CASE WHEN current_stage > 2 THEN current_stage ELSE 1 END,
+                total_score = ?
+            WHERE id = ?
+        """, (new_total, participant["id"]))
+        print(f"[*] @{username} — 1-bosqich ma'lumotlari yangilandi (Yangi 7 ta topshiriq tayyorlandi).")
+
+    conn.commit()
+    conn.close()
+
+    # Yangi 1-bosqich fayllarini yaratish (setup_stage1.sh)
+    setup_script = os.path.join(PROJECT_ROOT, "stage1_linux", "setup_stage1.sh")
+    res = subprocess.run(["bash", setup_script, username], capture_output=True, text=True)
+    if res.returncode != 0:
+        print(f"⚠️  setup_stage1.sh ogohlantirish: {res.stderr}")
+
+    return True
+
+def main():
+    caller = get_current_user()
+    arg1 = sys.argv[1].strip() if len(sys.argv) > 1 else ""
+    arg2 = sys.argv[2].strip() if len(sys.argv) > 2 else ""
+
+    print("====================================================================")
+    print("  🔄 KIBERXAVFSIZLIK CTF v2 — MUHITNI YANGILASH (RESET)")
+    print("====================================================================")
+
+    if arg1 == "--all-users":
+        if os.geteuid() != 0:
+            print("❌ Barcha talabalarni yangilash uchun sudo talab qilinadi:")
+            print("   sudo ctf-reset --all-users")
+            sys.exit(1)
+
+        conn = ctf_db.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT username FROM participants")
+        rows = cur.fetchall()
+        conn.close()
+
+        print(f"[*] Barcha ({len(rows)}) talabalar yangi 1-bosqichga o'tkazilmoqda...")
+        for r in rows:
+            u = r["username"]
+            reset_student(u, mode="stage1")
+
+        print("\n✅ Barcha talabalar muvaffaqiyatli yangilandi!\n")
+        return
+
+    if arg1 in ["--all", "-a"]:
+        reset_student(caller, mode="all")
+        print("\n🎉 Tizim muvaffaqiyatli butunlay boshidan boshlandi!")
+        print("  👉 Yo'riqnoma:   cat ~/README.txt")
+        print("  👉 Vazifalar:    cd ~/apex_corp")
+        print("  👉 Holat:        status\n")
+        return
+
+    if arg1 and not arg1.startswith("-"):
+        # Boshqa foydalanuvchini reset qilish (masalan, admin)
+        target = arg1
+        mode = "all" if arg2 == "--all" else "stage1"
+        reset_student(target, mode=mode)
+        print(f"\n✅ @{target} uchun yangilash yakunlandi!\n")
+        return
+
+    # Standart chaqiruv: ctf-reset (joriy foydalanuvchini yangi 7 ta topshiriqqa o'tkazish)
+    reset_student(caller, mode="stage1")
+    print("\n✅ 1-BOSQICH YANGI VERSIYAGA O'TKAZILDI!")
+    print("--------------------------------------------------------------------")
+    print("  📁 Yangi 7 ta amaliy topshiriq '~/apex_corp' papkasida sozlandi.")
+    print("  📄 Yo'riqnoma:   cat ~/README.txt")
+    print("  📂 Kirish:       cd ~/apex_corp")
+    print("  📊 Holat:        status")
+    print("  🚩 Tekshirish:   check FLAG{...}")
+    print("====================================================================\n")
+
+if __name__ == "__main__":
+    main()

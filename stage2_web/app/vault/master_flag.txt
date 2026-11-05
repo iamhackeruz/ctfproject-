@@ -1,0 +1,11 @@
+====================================================================
+🚩 APEX GLOBAL TECHNOLOGIES — ROOT SECURITY VAULT BREACH 🚩
+====================================================================
+Siz markaziy korporativ serverni masofadan to'liq qo'lga kiritdingiz (RCE)!
+Ushbu tizimning eng yuqori darajadagi bosh flagingiz:
+
+FLAG{v2_rce_apex_vault_breach_00j0}
+
+Barcha tizim jurnallari ushbu hodisani qayd etdi. Hisobotingizda (Stage 3)
+ushbu zaiflik qanday ekspluatatsiya qilinganini batafsil yoritib bering!
+====================================================================

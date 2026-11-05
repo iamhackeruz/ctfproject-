@@ -1,0 +1,108 @@
+{
+  "project_name": "Apex Global Technologies Cyber Target",
+  "version": "2.0",
+  "total_points": 3000,
+  "stage3_unlock_threshold": 1200,
+  "challenges": [
+    {
+      "code": "V1",
+      "title": "Yashirin Tizim Ma'lumotlari Oqishi",
+      "vuln_type": "Information Disclosure (Git Leak)",
+      "difficulty": "Oson",
+      "points": 100,
+      "flag": "FLAG{v2_infoleak_git_exposed_91a2}",
+      "endpoint": "/.git/HEAD",
+      "description": "Ochiq qolgan .git katalogi orqali repo va commit tarixidagi flag fosh bo'ladi."
+    },
+    {
+      "code": "V2",
+      "title": "Xodimlar Pochtalarini Sanash",
+      "vuln_type": "User Enumeration (OSINT)",
+      "difficulty": "Oson",
+      "points": 150,
+      "flag": "FLAG{v2_user_enum_apex_sec_83b1}",
+      "endpoint": "/login",
+      "description": "Login formasida xodim pochtasini kiritganda javob headeri (X-Sec-Flag) orqali flag beriladi."
+    },
+    {
+      "code": "V3",
+      "title": "Autentifikatsiya Cheklovini Buzish",
+      "vuln_type": "Rate-Limit Bypass & Broken Auth",
+      "difficulty": "O'rta",
+      "points": 200,
+      "flag": "FLAG{v2_auth_bypass_headers_77c2}",
+      "endpoint": "/portal/staff-login",
+      "description": "X-Forwarded-For bilan IP blokirovkasini aylanib o'tib, asmith:spring2026 bilan xodim kabinetiga kiriladi."
+    },
+    {
+      "code": "V4",
+      "title": "Xodim Maxfiy Shartnomasini O'qish",
+      "vuln_type": "Insecure Direct Object Reference (IDOR)",
+      "difficulty": "O'rta",
+      "points": 250,
+      "flag": "FLAG{v2_idor_confidential_contract_66d4}",
+      "endpoint": "/portal/employee/contract?id=1",
+      "description": "ID=1 parametri bilan Direktorning (Dr. Robert Vance) maxfiy shartnomasi va flag o'qiladi."
+    },
+    {
+      "code": "V5",
+      "title": "Mijozlar Chatida Cookie O'g'irlash",
+      "vuln_type": "Stored XSS",
+      "difficulty": "O'rta",
+      "points": 250,
+      "flag": "FLAG{v2_stored_xss_cookie_theft_55e5}",
+      "endpoint": "/support/ticket",
+      "description": "Ticket formasiga XSS scripti yuborilganda admin cookie sessiyasi va flag fosh bo'ladi."
+    },
+    {
+      "code": "V6",
+      "title": "Server Konfiguratsiya Faylini O'qish",
+      "vuln_type": "LFI / Path Traversal",
+      "difficulty": "Qiyin",
+      "points": 300,
+      "flag": "FLAG{v2_lfi_path_traversal_master_44f6}",
+      "endpoint": "/download?doc=../../vault/.env.vault",
+      "description": "Path traversal orqali serverning maxfiy vault/.env.vault fayli o'qiladi."
+    },
+    {
+      "code": "V7",
+      "title": "Maxfiy Ombor Ma'lumotlarini Olish",
+      "vuln_type": "SQL Injection (UNION-based)",
+      "difficulty": "Qiyin",
+      "points": 350,
+      "flag": "FLAG{v2_sqli_union_secret_extract_33g7}",
+      "endpoint": "/services/search?q=' UNION SELECT 1,secret_key,classification,description FROM enterprise_secrets--",
+      "description": "Qidiruv maydonida SQLi orqali enterprise_secrets jadvalidan flag tortib olinadi."
+    },
+    {
+      "code": "V8",
+      "title": "Filtrni Buzib Webshell Yuklash",
+      "vuln_type": "Insecure File Upload",
+      "difficulty": "Qiyin",
+      "points": 400,
+      "flag": "FLAG{v2_fileupload_bypass_webshell_22h8}",
+      "endpoint": "/careers/apply",
+      "description": "Webshell fayli yuklanganda server uni qabul qiladi va tahlil qilib flagni ko'rsatadi."
+    },
+    {
+      "code": "V9",
+      "title": "Boshqaruv Kengashini Egallash",
+      "vuln_type": "Privilege Escalation (JWT Manipulation)",
+      "difficulty": "Kritik",
+      "points": 500,
+      "flag": "FLAG{v2_priv_esc_jwt_admin_takeover_11i9}",
+      "endpoint": "/admin/executive-board",
+      "description": "JWT tokendagi role ni superadmin ga o'zgartirib Boshqaruv kengashi va flag ochiladi."
+    },
+    {
+      "code": "V10",
+      "title": "Bosh Serverni Masofadan Buzish (RCE)",
+      "vuln_type": "Remote Code Execution (Command Injection)",
+      "difficulty": "Kritik",
+      "points": 500,
+      "flag": "FLAG{v2_rce_apex_vault_breach_00j0}",
+      "endpoint": "/admin/diagnostics/ping",
+      "description": "Ping utilitasida command injection qilib vault/master_flag.txt o'qiladi."
+    }
+  ]
+}

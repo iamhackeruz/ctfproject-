@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Texnik Yordam va Qo'llab-quvvatlash — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row my-4">
+    {% if xss_alert %}
+    <div class="col-12 mb-3">
+        <div class="alert alert-warning border-warning shadow-sm">
+            <h5 class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Xavfsizlik bo'limi ogohlantirishi:</h5>
+            <div>{{ xss_alert }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-lg-5 mb-4">
+        <div class="card p-4">
+            <h4 class="fw-bold text-white mb-3"><i class="fas fa-ticket-alt text-info me-2"></i> Yangi Murojaat Qoldirish</h4>
+            <p class="text-muted small">Bizning xavfsizlik va qo'llab-quvvatlash mutaxassislarimiz har bir murojaatni real-vaqt rejimida tekshirib chiqadi.</p>
+
+            <form action="/support/ticket" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Ismingiz:</label>
+                    <input type="text" name="client_name" class="form-control bg-dark text-white border-secondary" placeholder="Ali Valiyev" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Email:</label>
+                    <input type="email" name="email" class="form-control bg-dark text-white border-secondary" placeholder="ali@corp.uz" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Mavzu:</label>
+                    <input type="text" name="subject" class="form-control bg-dark text-white border-secondary" placeholder="API xatoligi" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Xabar matni:</label>
+                    <textarea name="message" rows="4" class="form-control bg-dark text-white border-secondary" placeholder="Murojaat matnini yozing..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-cyan w-100"><i class="fas fa-paper-plane me-1"></i> Yuborish</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <h4 class="fw-bold text-white mb-3"><i class="fas fa-history text-info me-2"></i> So'nggi Murojaatlar Jurnali</h4>
+        <div class="d-flex flex-column gap-3">
+            {% for t in tickets %}
+            <div class="card p-3 border-secondary">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold text-info">{{ t['client_name'] }}</span>
+                    <span class="badge bg-secondary">{{ t['created_at'] }}</span>
+                </div>
+                <h6 class="text-white mb-1">{{ t['subject'] }}</h6>
+                <!-- Stored XSS maydoni (safe filtri bilan chiqarilmoqda) -->
+                <p class="text-light small mb-2 bg-dark p-2 rounded">{{ t['message'] | safe }}</p>
+
+                {% if t['admin_reply'] %}
+                <div class="alert alert-dark border-info small mb-0 py-2">
+                    <strong class="text-warning"><i class="fas fa-user-shield me-1"></i> Administrator Javobi:</strong>
+                    <div>{{ t['admin_reply'] }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

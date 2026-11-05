@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚩 CTF v2 — KATTA EKRAN JONLI HUJUM MATRITSASI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-body: #050811;
+            --card-dark: #0c1222;
+            --neon-green: #00ff88;
+            --neon-cyan: #00f2fe;
+            --neon-orange: #ff9900;
+            --neon-red: #ff3366;
+            --neon-purple: #b026ff;
+            --border-glow: rgba(0, 242, 254, 0.25);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 15px 25px;
+            overflow-x: hidden;
+        }
+
+        /* Sarlavha paneli */
+        .header-panel {
+            background: linear-gradient(135deg, rgba(12, 18, 34, 0.95), rgba(18, 28, 52, 0.95));
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 16px 24px;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .title-glow {
+            font-weight: 900;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #00f2fe, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        /* Live Activity Ticker */
+        .ticker-bar {
+            background: rgba(12, 18, 34, 0.9);
+            border: 1px solid rgba(255, 153, 0, 0.3);
+            border-radius: 10px;
+            padding: 8px 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .ticker-inner {
+            display: inline-block;
+            animation: tickerSlide 35s linear infinite;
+            font-weight: 500;
+        }
+
+        @keyframes tickerSlide {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Matritsa jadvali */
+        .matrix-container {
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .table-custom {
+            margin-bottom: 0;
+            vertical-align: middle;
+        }
+
+        .table-custom th {
+            background-color: #080d1a !important;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(0, 242, 254, 0.3);
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .table-custom td {
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        /* Hujumchi katakchalari */
+        .attacker-info {
+            text-align: left !important;
+            font-weight: 700;
+        }
+
+        .score-badge {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #00f2fe;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
+
+        /* 10 ta Zaiflik Katakchalari */
+        .vuln-cell {
+            width: 58px;
+            height: 48px;
+            border-radius: 8px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+        }
+
+        /* Yechilmagan holat */
+        .vuln-unsolved {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            color: #475569;
+        }
+
+        /* YECHILGAN (TO'LGAN) NEON YASHIL HOLAT */
+        .vuln-solved {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.25), rgba(0, 242, 254, 0.35));
+            border: 2px solid var(--neon-green);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.6), inset 0 0 8px rgba(0, 255, 136, 0.3);
+            animation: pulseGlow 2s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 12px rgba(0, 255, 136, 0.5); }
+            100% { box-shadow: 0 0 22px rgba(0, 255, 136, 0.9); }
+        }
+
+        /* Bosqich belgilari */
+        .stage-pill {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .stage-1 { background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; }
+        .stage-2 { background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; }
+        .stage-3 { background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; color: #c084fc; }
+        .stage-win { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; }
+    </style>
+</head>
+<body>
+
+    <!-- Sarlavha paneli -->
+    <div class="header-panel">
+        <div>
+            <h2 class="title-glow mb-1">
+                <i class="fas fa-shield-virus me-2"></i> KIBERXAVFSIZLIK CTF v2 — JONLI HUJUM MATRITSASI
+            </h2>
+            <div class="small text-muted">
+                <span class="badge bg-danger me-2"><i class="fas fa-circle me-1 fa-fade"></i> LIVE AUDITORIYA</span>
+                OWASP Top 10 Zaifliklar Arenasi &bull; 3-bosqich o'tish chegarasi: <strong class="text-warning">1200 ball</strong>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-end">
+                <div id="liveClock" class="fw-bold fs-5 font-monospace text-info">--:--:--</div>
+                <div class="small text-muted" id="statusConnection"><i class="fas fa-sync fa-spin me-1"></i> Ulangan</div>
+            </div>
+            <button class="btn btn-outline-info btn-sm px-3" onclick="toggleFullscreen()">
+                <i class="fas fa-expand me-1"></i> Katta Ekran (F11)
+            </button>
+        </div>
+    </div>
+
+    <!-- Jonli yangiliklar lentasi (Ticker) -->
+    <div class="ticker-bar">
+        <div class="ticker-inner" id="tickerText">
+            🚀 Xush kelibsiz! CTF Arenasi faol ishlamoqda. 10 ta zaiflikdan kamida 1200 ball to'plagan ishtirokchilarga 3-bosqich (Reporting) ochiladi!
+        </div>
+    </div>
+
+    <!-- Asosiy Matritsa Jadvali -->
+    <div class="matrix-container">
+        <div class="table-responsive">
+            <table class="table table-custom align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 220px; text-align: left;">Hujumchi / Ishtirokchi</th>
+                        <th style="width: 140px;">Bosqich</th>
+                        <th style="width: 110px;">Jami Ball</th>
+                        <!-- 10 ta Zaiflik Sarlavhalari -->
+                        <th>V1<br><small class="text-muted">100b</small></th>
+                        <th>V2<br><small class="text-muted">150b</small></th>
+                        <th>V3<br><small class="text-muted">200b</small></th>
+                        <th>V4<br><small class="text-muted">250b</small></th>
+                        <th>V5<br><small class="text-muted">250b</small></th>
+                        <th>V6<br><small class="text-muted">300b</small></th>
+                        <th>V7<br><small class="text-muted">350b</small></th>
+                        <th>V8<br><small class="text-muted">400b</small></th>
+                        <th>V9<br><small class="text-muted">500b</small></th>
+                        <th>V10<br><small class="text-muted">500b</small></th>
+                        <th style="width: 140px;">3-Bosqich (Hisobot)</th>
+                    </tr>
+                </thead>
+                <tbody id="matrixBody">
+                    <tr>
+                        <td colspan="15" class="text-center py-5 text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3 text-info"></i>
+                            <p>Ma'lumotlar yuklanmoqda...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // SSE yoki Polling orqali real-vaqt matritsani yangilash
+        let lastSolvesCount = 0;
+
+        function renderMatrix(data) {
+            const tbody = document.getElementById('matrixBody');
+            if (!data.participants || data.participants.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="15" class="text-center py-5 text-muted">Hozircha ishtirokchilar mavjud emas.</td></tr>';
+                return;
+            }
+
+            let rowsHtml = '';
+            data.participants.forEach((p, idx) => {
+                // Rank
+                let rankBadge = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : idx + 1));
+
+                // Stage
+                let stageHtml = '';
+                if (p.current_stage === 1) {
+                    const s1Done = p.stage1_count || 0;
+                    const s1Total = p.stage1_total || 7;
+                    stageHtml = `<span class="stage-pill stage-1"><i class="fas fa-terminal me-1"></i> 1-Linux (${s1Done}/${s1Total})</span>`;
+                } else if (p.current_stage === 2) {
+                    stageHtml = `<span class="stage-pill stage-2"><i class="fas fa-globe me-1"></i> 2-Web (${p.stage2_score}b)</span>`;
+                } else if (p.current_stage === 3) {
+                    stageHtml = '<span class="stage-pill stage-3"><i class="fas fa-file-alt me-1"></i> 3-Report</span>';
+                } else {
+                    stageHtml = '<span class="stage-pill stage-win"><i class="fas fa-trophy me-1"></i> Tugatgan</span>';
+                }
+
+                // 10 ta Zaiflik katakchalari
+                let cellsHtml = '';
+                p.matrix.forEach(cell => {
+                    if (cell.solved) {
+                        cellsHtml += `
+                            <td>
+                                <div class="vuln-cell vuln-solved" title="${cell.code}: ${cell.points} ball (Yechildi!)">
+                                    <i class="fas fa-check"></i>
+                                    <span>${cell.points}</span>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        cellsHtml += `
+                            <td>
+                                <div class="vuln-cell vuln-unsolved" title="${cell.code}: ${cell.points} ball (Yechilmagan)">
+                                    <i class="fas fa-lock small"></i>
+                                    <span>${cell.points}</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+
+                // 3-Bosqich Report Status
+                let reportHtml = '';
+                if (p.report_submitted) {
+                    reportHtml = `<span class="badge bg-success py-2 px-2"><i class="fas fa-file-check me-1"></i> Topshirildi (+${p.report_score}b)</span>`;
+                } else if (p.stage3_unlocked) {
+                    reportHtml = `<span class="badge bg-warning text-dark py-2 px-2"><i class="fas fa-unlock me-1"></i> Ochildi (1200b+)</span>`;
+                } else {
+                    reportHtml = `<span class="badge bg-secondary py-2 px-2"><i class="fas fa-lock me-1"></i> Qulflangan</span>`;
+                }
+
+                rowsHtml += `
+                    <tr>
+                        <td class="fw-bold fs-5">${rankBadge}</td>
+                        <td class="attacker-info">
+                            <div class="text-white">${p.full_name}</div>
+                            <small class="text-muted font-monospace">@${p.username}</small>
+                        </td>
+                        <td>${stageHtml}</td>
+                        <td><div class="score-badge">${p.total_score}</div></td>
+                        ${cellsHtml}
+                        <td>${reportHtml}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = rowsHtml;
+
+            // Activity feed ticker yangilash
+            if (data.feed && data.feed.length > 0) {
+                const latestMsgs = data.feed.slice(0, 8).map(f => f.message).join(' &nbsp;&bull;&nbsp; ');
+                document.getElementById('tickerText').innerHTML = latestMsgs;
+            }
+        }
+
+        // SSE o'rnatish
+        function connectSSE() {
+            const evtSource = new EventSource('/api/live/stream');
+            evtSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    renderMatrix(data);
+                    document.getElementById('statusConnection').innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Jonli';
+                } catch(e) {
+                    console.error(e);
+                }
+            };
+            evtSource.onerror = function() {
+                document.getElementById('statusConnection').innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i> Qayta ulanmoqda...';
+                evtSource.close();
+                setTimeout(connectSSE, 3000);
+            };
+        }
+
+        // Boshlang'ich yuklash
+        fetch('/api/live/matrix')
+            .then(res => res.json())
+            .then(data => renderMatrix(data))
+            .catch(err => console.error(err));
+
+        connectSSE();
+    </script>
+</body>
+</html>

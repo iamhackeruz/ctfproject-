@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Bosh sahifa — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<!-- Hero Banner -->
+<div class="row align-items-center py-5">
+    <div class="col-lg-7">
+        <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(135deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            Keyingi Avlod Korporativ Kiberxavfsizlik va Bulutli Arxitektura
+        </h1>
+        <p class="lead text-muted mb-4">
+            Apex Global Technologies global moliya, davlat va telekom tashkilotlari uchun Zero-Trust infratuzilmasi hamda maxfiy ma'lumotlar xavfsizligini kafolatlaydi.
+        </p>
+        <div class="d-flex gap-3">
+            <a href="/services" class="btn btn-cyan btn-lg px-4"><i class="fas fa-cubes me-2"></i> Xizmatlarimiz</a>
+            <a href="/about" class="btn btn-outline-light btn-lg px-4"><i class="fas fa-info-circle me-2"></i> Kompaniya haqida</a>
+        </div>
+    </div>
+    <div class="col-lg-5 text-center mt-4 mt-lg-0">
+        <div class="card p-4 text-center border-info shadow-lg">
+            <i class="fas fa-shield-virus fa-5x text-info mb-3"></i>
+            <h4 class="fw-bold text-white">Apex Defense Suite 2026</h4>
+            <p class="text-muted small">Real-vaqt monitoringi va avtomatlashtirilgan sun'iy intellekt shlyuzlari faol ishlamoqda.</p>
+            <div class="badge bg-success py-2">TIZIM STATUSI: 100% ONLINE</div>
+        </div>
+    </div>
+</div>
+
+<!-- Xizmatlar -->
+<div class="row my-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="fw-bold">Bizning Asosiy Xizmatlarimiz</h2>
+        <p class="text-muted">Har bir xizmatimiz eng qat'iy xalqaro xavfsizlik standartlariga javob beradi</p>
+    </div>
+    {% for s in services %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 p-3">
+            <div class="card-body">
+                <span class="badge bg-secondary mb-2">{{ s.category }}</span>
+                <h5 class="card-title text-white fw-bold">{{ s.title }}</h5>
+                <p class="card-text text-muted small">{{ s.description }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Rahbariyat / OSINT Clues -->
+<div class="row my-5">
+    <div class="col-12 text-center mb-4">
+        <h2 class="fw-bold">Yetakchi Muhandislar va Rahbariyat</h2>
+        <p class="text-muted">Kompaniyamizning poydevorini tashkil etuvchi asosiy mutaxassislar</p>
+    </div>
+    {% for e in employees %}
+    <div class="col-md-4 mb-4">
+        <div class="card p-3 text-center h-100">
+            <div class="card-body">
+                <i class="fas fa-user-circle fa-4x text-muted mb-3"></i>
+                <h5 class="fw-bold text-white">{{ e.name }}</h5>
+                <p class="text-info small mb-1">{{ e.role }}</p>
+                <p class="text-muted small mb-2">{{ e.department }}</p>
+                <code class="text-secondary small">{{ e.email }}</code>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Karyera va Ishga Qabul — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center py-4">
+    <div class="col-lg-6">
+        <div class="card p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-file-upload fa-3x text-info mb-2"></i>
+                <h3 class="fw-bold text-white">Bizning Jamoaga Qo'shiling</h3>
+                <p class="text-muted small">Kiberxavfsizlik va Bulutli Muhandislik bo'yicha bo'sh ish o'rinlari</p>
+            </div>
+
+            {% if success %}
+            <div class="alert alert-success border-success small">
+                <i class="fas fa-check-circle me-1"></i> {{ success }}
+            </div>
+            {% endif %}
+
+            {% if error %}
+            <div class="alert alert-danger border-danger small">
+                <i class="fas fa-times-circle me-1"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/careers/apply" method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label text-muted">To'liq ism-familiyangiz:</label>
+                    <input type="text" name="name" class="form-control bg-dark text-white border-secondary" placeholder="Sardor Aliyev" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Elektron pochta:</label>
+                    <input type="email" name="email" class="form-control bg-dark text-white border-secondary" placeholder="sardor@gmail.com" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Rezyume (CV / Resume) fayli:</label>
+                    <input type="file" name="resume" class="form-control bg-dark text-white border-secondary" required>
+                    <div class="form-text text-muted small">Qabul qilinadigan formatlar: .pdf, .docx (Maksimal hajm: 5MB)</div>
+                </div>
+                <button type="submit" class="btn btn-cyan w-100 py-2"><i class="fas fa-upload me-1"></i> Rezyumeni Yuklash</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

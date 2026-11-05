@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""
+bin/check — CTF v2 Flag tekshirish buyrug'i
+Terminal orqali ishlatish:
+  check
+  check FLAG{...}
+"""
+
+import sys
+import os
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+sys.path.insert(0, PROJECT_ROOT)
+
+from core_db import db as ctf_db
+
+def main():
+    username = os.environ.get("SUDO_USER") or os.environ.get("USER") or "talaba1"
+    participant = ctf_db.get_participant_by_user(username)
+
+    if not participant:
+        # Avtomatik ro'yxatdan o'tkazish
+        participant = ctf_db.register_participant(username, username.capitalize())
+
+    flag = ""
+    if len(sys.argv) > 1:
+        flag = sys.argv[1].strip()
+    else:
+        # flag.txt dan o'qish
+        home_dir = f"/home/{username}"
+        paths = [
+            os.path.join(home_dir, "flag.txt"),
+            os.path.join(home_dir, "apex_corp", "flag.txt")
+        ]
+        for p in paths:
+            if os.path.exists(p):
+                with open(p, "r") as f:
+                    flag = f.read().strip()
+                break
+
+    if not flag:
+        print("\n⚠️  Flag topilmadi!")
+        print("Foydalanish:")
+        print("  check FLAG{...}")
+        print("  echo \"FLAG{...}\" > ~/flag.txt && check\n")
+        sys.exit(1)
+
+    print("====================================================================")
+    print(f"  🚩 CTF v2 FLAGNI TEKSHIRISH — Foydalanuvchi: {username}")
+    print("====================================================================")
+
+    # 1. 1-bosqich (Linux) flagi sifatida tekshirib ko'rish
+    ok1, msg1 = ctf_db.submit_stage1_flag(username, flag)
+    if ok1:
+        print(f"\n{msg1}\n")
+        sys.exit(0)
+
+    # 2. 2-bosqich (Web Pentest) flagi sifatida tekshirib ko'rish
+    ok2, msg2, details = ctf_db.submit_stage2_flag(participant["id"], flag)
+    if ok2:
+        print(f"\n🎉 {msg2}\n")
+        sys.exit(0)
+
+    # Noto'g'ri flag
+    print(f"\n❌ {msg1}\n")
+    sys.exit(1)
+
+if __name__ == "__main__":
+    main()

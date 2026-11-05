@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Xodimlar Portali — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="card p-4 border-info">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-shield fa-3x text-info mb-2"></i>
+                <h3 class="fw-bold text-white">Xodimlar Portali</h3>
+                <p class="text-muted small">Faqat Apex muhandislari va xodimlari uchun (Zero-Trust)</p>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger font-monospace small">
+                <i class="fas fa-exclamation-triangle me-1"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/portal/staff-login" method="POST">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Xodim Login / Foydalanuvchi nomi:</label>
+                    <input type="text" name="username" class="form-control bg-dark text-white border-secondary" placeholder="masalan: asmith" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Xizmat Paroli:</label>
+                    <input type="password" name="password" class="form-control bg-dark text-white border-secondary" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-cyan w-100 py-2"><i class="fas fa-key me-1"></i> Tizimga Kirish</button>
+            </form>
+
+            <div class="alert alert-secondary border-secondary mt-4 small text-muted">
+                <i class="fas fa-info-circle me-1"></i> <strong>Xavfsizlik eslatmasi:</strong> Har bir IP manzil uchun 4 ta xato urinishdan so'ng 60 soniya vaqtinchalik bloklanish yoqiladi.
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

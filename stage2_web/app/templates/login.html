@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Mijozlar Kirish — Apex Global Technologies{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="card p-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-lock fa-3x text-info mb-2"></i>
+                <h3 class="fw-bold text-white">Mijozlar Tizimiga Kirish</h3>
+                <p class="text-muted small">Korporativ hamkorlar va mijozlar hisobi</p>
+            </div>
+
+            <div id="loginAlert" class="alert d-none"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Elektron pochta:</label>
+                    <input type="text" id="emailInput" class="form-control bg-dark text-white border-secondary" placeholder="masalan: asmith@apextech.com" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Maxfiy parol:</label>
+                    <input type="password" id="passwordInput" class="form-control bg-dark text-white border-secondary" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-cyan w-100 py-2"><i class="fas fa-sign-in-alt me-1"></i> Kirish</button>
+            </form>
+
+            <div class="text-center mt-3">
+                <p class="small text-muted mb-0">Apex xodimisizmi? <a href="/portal/staff-login" class="text-info text-decoration-none">Staff Portaliga o'ting</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value.trim();
+    const alertBox = document.getElementById('loginAlert');
+
+    try {
+        const res = await fetch('/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: email, password: password})
+        });
+
+        // Response headers (V2 Flag leak tekshiruvi)
+        const flagHeader = res.headers.get('X-Sec-Flag');
+        const userStatus = res.headers.get('X-User-Status');
+
+        const data = await res.json();
+        if (res.ok) {
+            alertBox.className = "alert alert-success";
+            alertBox.innerText = "Muvaffaqiyatli!";
+        } else {
+            alertBox.className = "alert alert-danger";
+            let msg = data.message;
+            if (flagHeader) {
+                msg += "\n\n🚩 [HEADER LEAK]: " + flagHeader;
+            }
+            alertBox.innerText = msg;
+        }
+        alertBox.classList.remove('d-none');
+    } catch (err) {
+        alertBox.className = "alert alert-danger";
+        alertBox.innerText = "Xato: " + err;
+        alertBox.classList.remove('d-none');
+    }
+}
+</script>
+
+{% endblock %}

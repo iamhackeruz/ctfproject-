@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}403 Ruxsat Berilmadi — Boshqaruv Kengashi{% endblock %}
+{% block content %}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="card p-5 border-danger">
+            <i class="fas fa-hand-paper fa-5x text-danger mb-4"></i>
+            <h2 class="fw-bold text-white mb-2">403 Ruxsat Cheklangan!</h2>
+            <p class="text-muted mb-4">
+                Ushbu sahifa faqat <strong>Superadmin</strong> va Direktorlar Kengashi a'zolari uchun himoyalangan.
+            </p>
+            <div class="alert alert-dark border-secondary font-monospace small mb-4">
+                Sizning joriy rolingiz: <span class="badge bg-danger">{{ role }}</span><br>
+                Talab qilinadigan rol: <span class="badge bg-success">superadmin</span>
+            </div>
+            <p class="text-muted small">
+                <i class="fas fa-key text-warning me-1"></i> JWT sessiya tokeningizdagi claims parametrlari to'g'ri sozlanganligiga ishonch hosil qiling!
+            </p>
+            <a href="/portal/staff/dashboard" class="btn btn-outline-secondary mt-2">
+                <i class="fas fa-arrow-left me-1"></i> Xodim kabinetiga qaytish
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

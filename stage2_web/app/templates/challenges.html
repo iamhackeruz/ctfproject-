@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Zaifliklar Xaritasi — 10 ta OWASP Topshiriqlari — CTF v2{% endblock %}
+{% block content %}
+
+<style>
+    /* Zaifliklar Xaritasi Zamonaviy Kiber Dizayn */
+    .vuln-card {
+        background: linear-gradient(145deg, #0d1527, #131f38);
+        border: 1px solid rgba(0, 242, 254, 0.22);
+        border-radius: 14px;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+    }
+    .vuln-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(0, 242, 254, 0.6);
+        box-shadow: 0 10px 30px rgba(0, 242, 254, 0.18);
+    }
+    .vuln-code-badge {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        background: rgba(0, 242, 254, 0.12);
+        color: #00f2fe;
+        border: 1px solid rgba(0, 242, 254, 0.35);
+    }
+    .endpoint-badge {
+        background: #080d19;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #38bdf8;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .endpoint-badge:hover {
+        background: rgba(56, 189, 248, 0.15);
+        color: #7dd3fc;
+        border-color: #38bdf8;
+    }
+    .scenario-box {
+        background: rgba(15, 23, 42, 0.7);
+        border-left: 3px solid #38bdf8;
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    .guidance-box {
+        background: rgba(245, 158, 11, 0.08);
+        border-left: 3px solid #f59e0b;
+        border-radius: 6px;
+        padding: 10px 14px;
+        color: #fef3c7;
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+    .tools-pill {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #cbd5e1;
+        font-size: 0.78rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+    .card-title-glow {
+        color: #ffffff;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .cat-text {
+        color: #94a3b8;
+        font-size: 0.82rem;
+        font-weight: 500;
+    }
+</style>
+
+<div class="row my-4">
+    <!-- Yuqori axborot paneli -->
+    <div class="col-12 text-center mb-4">
+        <span class="badge bg-danger px-3 py-2 mb-2 fs-6 shadow-sm">
+            <i class="fas fa-shield-virus me-2"></i> 2-BOSQICH: WEB PENTEST ARENASI
+        </span>
+        <h2 class="fw-bold text-white mt-2">10 Ta Korporativ Zaifliklar Xaritasi</h2>
+        <p class="text-light col-md-8 mx-auto" style="color: #cbd5e1 !important; font-size: 1.05rem;">
+            Ushbu korporativ veb-portalda 10 ta realistik OWASP zaifligi mavjud. 
+            3-bosqichga (Professional Xavfsizlik Hisoboti) o'tish uchun ulardan <strong>kamida 1200 ball</strong> to'plashingiz kifoya.
+        </p>
+        <div class="d-flex justify-content-center flex-wrap gap-3 mt-3">
+            <span class="badge bg-dark border border-secondary text-light p-2 px-3">
+                <i class="fas fa-flag text-warning me-1"></i> Jami: <strong>10 ta zaiflik</strong>
+            </span>
+            <span class="badge bg-info text-dark p-2 px-3 fw-bold">
+                <i class="fas fa-star me-1"></i> Maksimal ball: <strong>3000 ball</strong>
+            </span>
+            <span class="badge bg-success p-2 px-3 fw-bold">
+                <i class="fas fa-unlock me-1"></i> 3-Bosqichga o'tish: <strong>1200 ball</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- 10 TA ZAIFLIK KARTALARI -->
+    {% set items = [
+        {
+            "code": "V1",
+            "title": "Versiyalar Nazorati Oqishi (Repository Leak)",
+            "cat": "OWASP A05: Security Misconfiguration / Info Leak",
+            "points": 100,
+            "diff": "Oson",
+            "diff_class": "bg-success text-white",
+            "scope_label": "Asosiy Veb-Server",
+            "scope_url": "/",
+            "target_display": "Web Server Root (/)",
+            "objective": "Veb-server kataloglarini tahlil qilib, ishlab chiquvchilar tomonidan ehtiyotsizlik oqibatida ochiq qoldirilgan versiyalar nazorati arxivini fosh eting va xavfsizlik flagini toping.",
+            "desc": "Apex korporatsiyasi yangi veb-versiyani serverga joylashtirishda (deployment) xavfsizlik qoidalariga to'liq rioya qilmagan. Tizim arxivida ommaga ko'rinmasligi kerak bo'lgan loyiha boshqaruvi qoldiqlari ochiq qolgan bo'lishi mumkin.",
+            "methodology": "Veb-serverda ommaviy ko'rinmaydigan yashirin konfiguratsiya va versiyalash kataloglarini qidirish (Directory/File Fuzzing) usullarini qo'llang. Dasturchilar ko'pincha qaysi papkalarni yopishni unutishadi?",
+            "tools": ["Brauzer", "curl", "Fuzzing / Dirb", "DevTools"]
+        },
+        {
+            "code": "V2",
+            "title": "Foydalanuvchilarni Aniqlash (User Enumeration)",
+            "cat": "OWASP A07: Identification and Authentication Failures",
+            "points": 150,
+            "diff": "Oson",
+            "diff_class": "bg-success text-white",
+            "scope_label": "Mijozlar Avtorizatsiya Xizmati",
+            "scope_url": "/login",
+            "target_display": "/login",
+            "objective": "Avtorizatsiya tizimidagi xavfsizlik kamchiligini tahlil qilib, mavjud va mavjud bo'lmagan foydalanuvchilar orasidagi farq orqali flagni qo'lga kiriting.",
+            "desc": "Kirish sahifasida dasturchi autentifikatsiya tekshiruvini noto'g'ri loyihalashtirgan. Tizimga ro'yxatdan o'tgan haqiqiy xodim hisobi kiritilganda, server odatdagidan boshqacha qo'shimcha ma'lumot qaytaradi.",
+            "methodology": "1-bosqichda qo'lga kiritilgan kompaniya xodimlari ma'lumotlaridan foydalanib kirish formasini test qiling. Faqat sahifadagi vizual matnga emas, balki tarmoq trafigi va server javoblarining ichki sarlavhalariga ham e'tibor qarating.",
+            "tools": ["DevTools (Network)", "Burp Suite", "curl -v"]
+        },
+        {
+            "code": "V3",
+            "title": "Ichki Xodimlar Portali va Tarmoq Cheklovini Buzish",
+            "cat": "OWASP A07: Broken Authentication & Access Restriction",
+            "points": 200,
+            "diff": "O'rta",
+            "diff_class": "bg-primary text-white",
+            "scope_label": "Korporativ Xodimlar Portali",
+            "scope_url": "/portal/staff-login",
+            "target_display": "/portal/staff-login",
+            "objective": "Tashqi tarmoq cheklovlari va urinishlar chegarasini (Rate-limit) chetlab o'tib, xodimlar kabinetiga kiring.",
+            "desc": "Kompaniya xodimlar portali faqat ichki korporativ tarmoq xodimlari uchun mo'ljallangan va tashqi internetdan ulanishlarni bloklaydi. Biroq server so'rovlar qayerdan kelayotganini tekshirishda oraliq tarmoq sarlavhalarini noto'g'ri filtrlashi mumkin.",
+            "methodology": "Tarmoq manzilini soxtalashtirish (IP Spoofing / Proxy Header Injection) usullarini o'rganing. 1-bosqichda qo'lga kiritilgan xodimlar ma'lumotlar bazasidan foydalanib, xodimlar kabinetiga kirish va uning huquqlarini tekshirish yo'lini toping.",
+            "tools": ["Burp Suite", "ModHeader", "HTTP Headers"]
+        },
+        {
+            "code": "V4",
+            "title": "Rahbariyat Maxfiy Hujjatini Fosh Qilish (IDOR)",
+            "cat": "OWASP A01: Broken Access Control / IDOR",
+            "points": 250,
+            "diff": "O'rta",
+            "diff_class": "bg-primary text-white",
+            "scope_label": "Xodim Shartnomalar Moduli",
+            "scope_url": "/portal/staff-login",
+            "target_display": "/portal/employee/contract",
+            "objective": "Obyekt identifikatorlari (ID) ustidan nazorat yo'qligidan foydalanib, kompaniya yuqori rahbariyatining maxfiy hujjatini oching.",
+            "desc": "Xodimlar kabinetida mehnat shartnomalari maxsus parametrlar orqali yuklanadi. Dasturchi foydalanuvchi faqat o'ziga tegishli hujjatni ochayotganini tekshirishni unutgan, bu esa boshqa xodimlar ma'lumotlarini o'qish xavfini keltirib chiqaradi.",
+            "methodology": "Xodim kabinetida hujjatlar qanday parametrlar asosida chaqirilayotganiga e'tibor bering. Identifikatorlarni manipulyatsiya qilish orqali tizimning boshqa foydalanuvchilari profillarini o'rganing.",
+            "tools": ["Brauzer URL", "Burp Suite Repeater"]
+        },
+        {
+            "code": "V5",
+            "title": "Qo'llab-quvvatlash Markazida Cookie O'g'irlash (Stored XSS)",
+            "cat": "OWASP A03: Injection / Stored XSS",
+            "points": 250,
+            "diff": "O'rta",
+            "diff_class": "bg-primary text-white",
+            "scope_label": "Texnik Yordam Murojaatlari",
+            "scope_url": "/support/ticket",
+            "target_display": "/support/ticket",
+            "objective": "Murojaat formasiga saqlanuvchi skript inyeksiyasini amalga oshirib, administrator sessiyasidagi maxfiy flagni qo'lga kiriting.",
+            "desc": "Mijozlar texnik yordamga yuborayotgan xabarlar xavfsiz sanatsiya (tozalash) qilinmasdan saqlanmoqda. Administrator yangi murojaatlarni tekshirganda kiritilgan kodlar uning brauzerida bajarilib ketishi mumkin.",
+            "methodology": "Murojaat maydonlariga brauzer tomonidan bajariladigan maxsus teglarni kiritib ko'ring (XSS Injection). Administrator ko'rib chiqishi natijasida uning sessiya ma'lumotlarini o'qishga intiling.",
+            "tools": ["XSS Payloads", "DevTools Console", "Burp Suite"]
+        },
+        {
+            "code": "V6",
+            "title": "Server Konfiguratsiya Omborini O'qish (Path Traversal)",
+            "cat": "OWASP A01: Broken Access Control / Path Traversal",
+            "points": 300,
+            "diff": "Qiyin",
+            "diff_class": "bg-warning text-dark",
+            "scope_label": "Hujjatlar Markazi / Yuklab Olish",
+            "scope_url": "/download?doc=privacy.pdf",
+            "target_display": "/download?doc=privacy.pdf",
+            "objective": "Path Traversal zaifligidan foydalanib, serverning ommaga yopiq bo'lgan konfiguratsiya omboridagi maxfiy faylni o'qib chiqing.",
+            "desc": "Saytdagi hujjat yuklab olish mexanizmi fayl nomlari va kataloglar chegarasini qat'iy cheklamaydi. Kiber-hujumchi ruxsat berilgan katalogdan chiqib, operatsion tizim ichidagi maxfiy fayllarni o'qishi mumkin.",
+            "methodology": "Sayt arxitekturasini, qidiruv botlari uchun qo'yilgan robots.txt ko'rsatmalarini va kataloglar bo'ylab harakatlanish imkoniyatlarini o'rganing. Tizim konfiguratsiyasi qayerda saqlanishi mumkinligini tahlil qiling.",
+            "tools": ["Directory Traversal", "Burp Suite", "curl"]
+        },
+        {
+            "code": "V7",
+            "title": "Maxfiy Ma'lumotlar Bazasini Fosh Etish (SQL Injection)",
+            "cat": "OWASP A03: Injection / SQL Injection",
+            "points": 350,
+            "diff": "Qiyin",
+            "diff_class": "bg-warning text-dark",
+            "scope_label": "Xizmatlar Qidiruv Tizimi",
+            "scope_url": "/services",
+            "target_display": "/services",
+            "objective": "Qidiruv maydonida SQL inyeksiya zaifligini toping va bazaning yashirin jadvallaridan korporatsiya sirini tortib oling.",
+            "desc": "Xizmatlar bo'limidagi qidiruv filtri foydalanuvchi kiritgan matnni to'g'ridan-to'g'ri SQL so'roviga birlashtiradi. Bu esa ma'lumotlar bazasi so'rovining mantiqiy tuzilishini o'zgartirishga yo'l ochadi.",
+            "methodology": "Qidiruv maydonida maxsus SQL belgilarini sinab ko'ring va server xatolarini kuzating. Baza tuzilmasini o'rganish va ma'lumotlar bazasidan yashirin korporativ yozuvlarni chiqarib olish (SQL Injection) usullarini qo'llang.",
+            "tools": ["SQL Injection", "sqlmap", "Burp Suite"]
+        },
+        {
+            "code": "V8",
+            "title": "Filtrlarni Chetlab O'tib Webshell Yuklash (File Upload)",
+            "cat": "OWASP A04: Insecure Design / File Upload",
+            "points": 400,
+            "diff": "Qiyin",
+            "diff_class": "bg-warning text-dark",
+            "scope_label": "Karyera va Rezyume Qabuli",
+            "scope_url": "/careers",
+            "target_display": "/careers",
+            "objective": "Fayl tekshiruvlarini aylanib o'tib, serverga ruxsatsiz skript yuklang va masofaviy tahlil flagini qo'lga kiriting.",
+            "desc": "Karyera bo'limida nomzodlardan rezyume qabul qilishda yuklanayotgan fayllar tekshiruvi to'liq emas. Tizim faqat hujjatlarni qabul qilishi kerak bo'lsa-da, filtrlardagi kamchilik tufayli dasturiy skriptlarni kiritish mumkin.",
+            "methodology": "Server faylni qaysi parametrlar (kengaytma, sarlavha, Content-Type) bo'yicha tekshirayotganini tahlil qiling. Filtrlarni aylanib o'tish (Extension / MIME-type bypass) usullarini sinab ko'ring.",
+            "tools": ["Burp Suite Repeater", "Webshell Scripts", "MIME Bypass"]
+        },
+        {
+            "code": "V9",
+            "title": "Boshqaruv Kengashini Egallash (Privilege Escalation)",
+            "cat": "OWASP A02: Cryptographic Failures / Broken Auth",
+            "points": 500,
+            "diff": "Kritik",
+            "diff_class": "bg-danger text-white",
+            "scope_label": "Boshqaruv Kengashi Paneli",
+            "scope_url": "/admin/executive-board",
+            "target_display": "/admin/executive-board",
+            "objective": "Sessiya tokenidagi vakolat darajasini manipulyatsiya qilib, Superadmin huquqini qo'lga kiriting va Boshqaruv kengashini oching.",
+            "desc": "Kengash paneliga kirish foydalanuvchining JSON Web Tokeni (JWT) orqali boshqariladi. Biroq token imzosini tekshiruvchi mexanizmda jiddiy kriptografik va konseptual xatoliklar mavjud.",
+            "methodology": "Sizga berilgan autentifikatsiya tokenining tuzilishi (Header, Payload, Signature) ni o'rganing. Token imzolash algoritmlari va vakolat darajalarini o'zgartirish (JWT Tampering) imkoniyatlarini sinab ko'ring.",
+            "tools": ["jwt.io", "CyberChef", "Burp JWT Editor"]
+        },
+        {
+            "code": "V10",
+            "title": "Bosh Serverni Masofadan Buzish (Command Injection)",
+            "cat": "OWASP A03: Injection / Remote Code Execution",
+            "points": 500,
+            "diff": "Kritik",
+            "diff_class": "bg-danger text-white",
+            "scope_label": "Tarmoq Diagnostika Utilitasi",
+            "scope_url": "/admin/diagnostics/ping",
+            "target_display": "/admin/diagnostics/ping",
+            "objective": "Buyruq inyeksiyasi (OS Command Injection) orqali serverda erkin terminal buyruqlarini bajaring va Markaziy Kassa flagini oling.",
+            "desc": "Tarmoq aloqasini tekshirish uchun mo'ljallangan utilita foydalanuvchi kiritgan parametrni to'g'ridan-to'g'ri operatsion tizim terminalida ishga tushiradi. Ushbu funksiya to'liq server nazoratiga olib kelishi mumkin.",
+            "methodology": "Operatsion tizim buyruqlarini zanjirlash (Command Chaining) usullarini qo'llang. Kiritilgan manzil ketidan qo'shimcha buyruqlarni qo'shib yuborish orqali server ichki tizimini tekshiring.",
+            "tools": ["Command Injection", "Burp Suite", "Terminal"]
+        }
+    ] %}
+
+    {% for ch in items %}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 p-3 vuln-card">
+            <div class="card-body d-flex flex-column p-2">
+                <!-- Yuqori qator: Kod, Qiyinchilik va Ball -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="vuln-code-badge fw-bold">{{ ch.code }}</span>
+                        <span class="badge {{ ch.diff_class }} px-2 py-1">{{ ch.diff }}</span>
+                    </div>
+                    <span class="badge bg-warning text-dark fw-bold fs-6 shadow-sm">
+                        <i class="fas fa-coins me-1"></i> +{{ ch.points }} ball
+                    </span>
+                </div>
+
+                <!-- Sarlavha va Kategoriya -->
+                <h5 class="card-title-glow mt-1 mb-1">{{ ch.title }}</h5>
+                <div class="cat-text mb-3">
+                    <i class="fas fa-shield-alt text-info me-1"></i> {{ ch.cat }}
+                </div>
+
+                <!-- Nishon Sahifasi / Hududi -->
+                <div class="mb-3 d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge bg-dark border border-secondary text-warning" style="font-size: 0.78rem;">
+                        <i class="fas fa-bullseye me-1"></i> Nishon:
+                    </span>
+                    <a href="{{ ch.scope_url }}" target="_blank" class="endpoint-badge" title="Sahifaga o'tish">
+                        {{ ch.target_display }} <i class="fas fa-arrow-up-right-from-square ms-2 small"></i>
+                    </a>
+                    <small class="text-white-50 ms-1">({{ ch.scope_label }})</small>
+                </div>
+
+                <!-- Hujum Maqsadi -->
+                <div class="mb-3">
+                    <div class="text-info fw-bold small mb-1">
+                        <i class="fas fa-crosshairs me-1"></i> Hujum Maqsadi:
+                    </div>
+                    <div class="scenario-box">
+                        {{ ch.objective }}
+                    </div>
+                </div>
+
+                <!-- Tizim Tavsifi & Stsenariy -->
+                <div class="mb-3">
+                    <div class="text-white-50 fw-bold small mb-1">
+                        <i class="fas fa-file-lines me-1"></i> Korporativ Stsenariy:
+                    </div>
+                    <p class="text-light small mb-0" style="color: #cbd5e1 !important; line-height: 1.55;">
+                        {{ ch.desc }}
+                    </p>
+                </div>
+
+                <!-- Tadqiqot va Metodologiya Yo'nalishi -->
+                <div class="mb-3">
+                    <div class="guidance-box">
+                        <strong><i class="fas fa-compass text-warning me-1"></i> Tahlil Yo'nalishi:</strong><br>
+                        {{ ch.methodology }}
+                    </div>
+                </div>
+
+                <!-- Tavsiya etilgan vositalar -->
+                <div class="mb-3">
+                    <span class="text-muted small me-2" style="color: #94a3b8 !important;">
+                        <i class="fas fa-wrench me-1"></i> Vositalar:
+                    </span>
+                    {% for tool in ch.tools %}
+                    <span class="tools-pill me-1">{{ tool }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- Pastki tugmalar -->
+                <div class="mt-auto pt-3 border-top border-secondary d-flex justify-content-between align-items-center">
+                    <a href="{{ ch.scope_url }}" target="_blank" class="btn btn-outline-info btn-sm px-3">
+                        <i class="fas fa-arrow-right-to-bracket me-1"></i> Sahifaga O'tish
+                    </a>
+                    <button class="btn btn-danger btn-sm px-3 fw-bold shadow-sm" onclick="openFlagModal('{{ ch.code }}')">
+                        <i class="fas fa-flag me-1"></i> Flag Topshirish
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function openFlagModal(code) {
+    const modalEl = document.getElementById('flagModal');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
+}
+</script>
+
+{% endblock %}

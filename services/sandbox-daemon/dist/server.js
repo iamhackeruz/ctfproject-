@@ -9,6 +9,7 @@ const child_process_1 = require("child_process");
 const util_1 = require("util");
 const execFileAsync = (0, util_1.promisify)(child_process_1.execFile);
 const DAEMON_PORT = parseInt(process.env.SANDBOX_DAEMON_PORT || process.env.DAEMON_PORT || "5055", 10);
+const DAEMON_HOST = process.env.DAEMON_HOST || "0.0.0.0";
 const DAEMON_SECRET = process.env.DAEMON_SECRET || process.env.SIDECAR_SECRET || "cyberedu_daemon_internal_secret_2026";
 const MAX_TERMINALS = parseInt(process.env.MAX_TERMINALS || "15", 10);
 const MAX_WEB_LABS = parseInt(process.env.MAX_WEB_LABS || "4", 10);
@@ -479,8 +480,8 @@ const server = http_1.default.createServer(async (req, res) => {
 });
 async function main() {
     await cleanOrphanContainers();
-    server.listen(DAEMON_PORT, "127.0.0.1", () => {
-        console.log(`[CYBEREDU DAEMON] Sandbox sidecar demon 127.0.0.1:${DAEMON_PORT} portda ishga tushdi.`);
+    server.listen(DAEMON_PORT, DAEMON_HOST, () => {
+        console.log(`[CYBEREDU DAEMON] Sandbox sidecar demon ${DAEMON_HOST}:${DAEMON_PORT} portda ishga tushdi.`);
     });
 }
 main().catch(console.error);

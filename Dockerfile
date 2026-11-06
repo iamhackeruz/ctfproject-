@@ -52,14 +52,16 @@ COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/.test-dist ./.test-dist
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN mkdir -p /app/data/videos && chown -R nextjs:nodejs /app/data && chmod +x /app/docker-entrypoint.sh
+RUN mkdir -p /app/logs /app/data/videos /app/data/attachments && \
+    chown -R nextjs:nodejs /app/logs /app/data && \
+    chmod +x /app/docker-entrypoint.sh
 
 USER nextjs
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://127.0.0.1:3000/api/auth || exit 1
+  CMD curl -f http://127.0.0.1:3000/api/health || exit 1
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["npm", "run", "start"]

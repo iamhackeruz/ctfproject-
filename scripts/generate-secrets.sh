@@ -55,13 +55,22 @@ SEC_DAEMON=$(openssl rand -hex 32)
 SEC_TOTP=$(openssl rand -hex 32)
 SEC_CRON=$(openssl rand -hex 32)
 SEC_ADMIN_RESET=$(openssl rand -hex 32)
+SEC_TICKET=$(openssl rand -hex 32)
+SEC_TG_WEBHOOK=$(openssl rand -hex 32)
 
 add_if_missing "SESSION_SECRET" "${SEC_SESSION}"
 add_if_missing "FLAG_SECRET" "${SEC_FLAG}"
 add_if_missing "DAEMON_SECRET" "${SEC_DAEMON}"
+add_if_missing "SIDECAR_SECRET" "${SEC_DAEMON}"
+add_if_missing "TICKET_SECRET" "${SEC_TICKET}"
 add_if_missing "TOTP_ENCRYPTION_KEY" "${SEC_TOTP}"
 add_if_missing "CRON_SECRET" "${SEC_CRON}"
 add_if_missing "ADMIN_RESET_TOKEN" "${SEC_ADMIN_RESET}"
+
+# Telegram Bot va Webhook sozlamalari
+add_if_missing "TELEGRAM_WEBHOOK_SECRET" "${SEC_TG_WEBHOOK}"
+add_if_missing "TELEGRAM_BOT_TOKEN" ""
+add_if_missing "TELEGRAM_BOT_USERNAME" ""
 
 # Ma'lumotlar bazasi foydalanuvchisi va kuchli paroli (24 belgi)
 PG_USER="cyberedu"
@@ -89,8 +98,12 @@ add_if_missing "ADMIN_INIT_PHONE" "+998901234567"
 # Papkalar va resurs cheklovlari
 add_if_missing "VIDEO_DIR" "/app/data/videos"
 add_if_missing "ATTACHMENTS_DIR" "/app/data/attachments"
+add_if_missing "MAX_TERMINALS" "15"
+add_if_missing "MAX_WEB_LABS" "4"
 add_if_missing "MAX_TERMINAL_CONTAINERS" "15"
 add_if_missing "MAX_WEB_LAB_CONTAINERS" "4"
+add_if_missing "MAX_VIDEO_SIZE_BYTES" "1610612736"
+add_if_missing "MAX_ATTACHMENT_SIZE_BYTES" "10485760"
 
 # Xavfsizlik uchun fayl huquqini yana bir bor 600 qilib tekshirish
 chmod 600 "${TARGET_PATH}"

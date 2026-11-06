@@ -6,6 +6,7 @@ import { promisify } from "util";
 const execFileAsync = promisify(execFile);
 
 const DAEMON_PORT = parseInt(process.env.SANDBOX_DAEMON_PORT || process.env.DAEMON_PORT || "5055", 10);
+const DAEMON_HOST = process.env.DAEMON_HOST || "0.0.0.0";
 const DAEMON_SECRET =
   process.env.DAEMON_SECRET || process.env.SIDECAR_SECRET || "cyberedu_daemon_internal_secret_2026";
 
@@ -588,8 +589,8 @@ const server = http.createServer(async (req, res) => {
 
 async function main() {
   await cleanOrphanContainers();
-  server.listen(DAEMON_PORT, "127.0.0.1", () => {
-    console.log(`[CYBEREDU DAEMON] Sandbox sidecar demon 127.0.0.1:${DAEMON_PORT} portda ishga tushdi.`);
+  server.listen(DAEMON_PORT, DAEMON_HOST, () => {
+    console.log(`[CYBEREDU DAEMON] Sandbox sidecar demon ${DAEMON_HOST}:${DAEMON_PORT} portda ishga tushdi.`);
   });
 }
 

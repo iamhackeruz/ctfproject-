@@ -36,9 +36,16 @@
     -X-Powered-By
   }
 
-  # Katta hajmdagi buferlangan hujumlardan himoya
-  request_body {
-    max_size 10MB
+  # Video yuklash uchun alohida 1600MB limit (Admin dars videolari)
+  @video_upload path /api/admin/videos/upload
+  request_body @video_upload {
+    max_size 1600MB
+  }
+
+  # Topshiriq fayllari va boshqa so'rovlar uchun 15MB limit
+  @standard_requests not path /api/admin/videos/upload
+  request_body @standard_requests {
+    max_size 15MB
   }
 
   # Cron API endpointlarini himoyalash:

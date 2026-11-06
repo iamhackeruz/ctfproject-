@@ -71,6 +71,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           isBlocked: true,
           mustChangePassword: true,
           twoFactorEnabled: true,
+          telegramUsername: true,
+          telegramConnectedAt: true,
           createdAt: true,
           _count: {
             select: {
@@ -101,6 +103,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       isBlocked: u.isBlocked,
       mustChangePassword: u.mustChangePassword,
       twoFactorEnabled: u.twoFactorEnabled,
+      telegramUsername: u.telegramUsername,
+      telegramConnectedAt: u.telegramConnectedAt ? u.telegramConnectedAt.toISOString() : null,
       createdAt: u.createdAt,
       enrollmentsCount: u._count.enrollments,
       solvedLabsCount: u._count.labSubmissions,

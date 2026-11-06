@@ -25,8 +25,8 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-cyberedu}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD kiritilishi shart}@postgres:5432/${POSTGRES_DB:-cyberedu}?schema=public
       - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET kiritilishi shart}
       - FLAG_SECRET=${FLAG_SECRET:?FLAG_SECRET kiritilishi shart}
-      - TICKET_SECRET=${TICKET_SECRET:?TICKET_SECRET kiritilishi shart}
-      - SIDECAR_SECRET=${SIDECAR_SECRET:?SIDECAR_SECRET kiritilishi shart}
+      - TICKET_SECRET=${TICKET_SECRET:-${SESSION_SECRET:?TICKET_SECRET kiritilishi shart}}
+      - SIDECAR_SECRET=${SIDECAR_SECRET:-${DAEMON_SECRET:?SIDECAR_SECRET kiritilishi shart}}
       - SANDBOX_DAEMON_URL=http://sandbox-daemon:5055
       - ALLOW_PUBLIC_REGISTRATION=${ALLOW_PUBLIC_REGISTRATION:-false}
       - DOMAIN=${DOMAIN:?DOMAIN muhit o'zgaruvchisi kiritilishi shart (masalan, cyberedu.uz)}
@@ -46,6 +46,7 @@ services:
       - MAX_ATTACHMENT_SIZE_BYTES=${MAX_ATTACHMENT_SIZE_BYTES:-10485760}
       - TOTP_ENCRYPTION_KEY=${TOTP_ENCRYPTION_KEY:?TOTP_ENCRYPTION_KEY kiritilishi shart}
       - CRON_SECRET=${CRON_SECRET:?CRON_SECRET kiritilishi shart}
+      - ADMIN_RESET_TOKEN=${ADMIN_RESET_TOKEN:?ADMIN_RESET_TOKEN kiritilishi shart}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}
       - TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET:-}
@@ -55,6 +56,7 @@ services:
     volumes:
       - cyberedu_prod_videos:/app/data/videos
       - cyberedu_prod_attachments:/app/data/attachments
+      - cyberedu_prod_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -127,7 +129,7 @@ services:
     # DIQQAT: ports bo'limi yo'q! Faqat ichki tarmoqda 5055-portda ishlaydi.
     environment:
       - DAEMON_PORT=5055
-      - SIDECAR_SECRET=${SIDECAR_SECRET:?SIDECAR_SECRET kiritilishi shart}
+      - SIDECAR_SECRET=${SIDECAR_SECRET:-${DAEMON_SECRET:?SIDECAR_SECRET kiritilishi shart}}
       - LAB_NETWORK=cyberedu-weblab-net
       - MAX_TERMINALS=${MAX_TERMINALS:-15}
       - MAX_WEB_LABS=${MAX_WEB_LABS:-4}
@@ -218,6 +220,8 @@ volumes:
     name: cyberedu_prod_videos
   cyberedu_prod_attachments:
     name: cyberedu_prod_attachments
+  cyberedu_prod_logs:
+    name: cyberedu_prod_logs
   cyberedu_prod_caddy_data:
     name: cyberedu_prod_caddy_data
   cyberedu_prod_caddy_config:

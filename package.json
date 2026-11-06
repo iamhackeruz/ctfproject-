@@ -10,6 +10,7 @@
     "daemon": "node services/sandbox-daemon/dist/server.js",
     "init:admin": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/init-admin.js && rm -rf .test-dist",
     "deploy": "bash scripts/deploy-first-run.sh",
+    "bot:setup": "bash scripts/setup-telegram-webhook.sh",
     "test:video": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase9-video-backend.js && node .test-dist/scripts/test-phase9-video-browser.js && rm -rf .test-dist",
     "test:phase10": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase10-backend.js && node .test-dist/scripts/test-phase10-browser.js && rm -rf .test-dist",
     "test:phase11": "npx tsc -p tsconfig.test.json && node .test-dist/scripts/test-phase11-2fa-reminders.js && node .test-dist/scripts/test-phase11-playwright-2fa-mobile.js && rm -rf .test-dist",

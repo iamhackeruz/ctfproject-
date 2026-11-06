@@ -229,8 +229,8 @@ export class LocalDiskAttachmentStorage implements AttachmentStorage {
       if (!fs.existsSync(this.baseDir)) {
         fs.mkdirSync(this.baseDir, { recursive: true, mode: 0o700 });
       }
-    } catch (err) {
-      console.error("[AttachmentStorage] Papkani yaratib bo'lmadi:", err);
+    } catch {
+      // Build vaqtida yoki ruxsat yo'q muhitda xatoni e'tiborsiz qoldirish
     }
   }
 

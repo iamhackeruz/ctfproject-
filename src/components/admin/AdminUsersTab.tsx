@@ -12,6 +12,8 @@ interface UserItem {
   isBlocked: boolean;
   mustChangePassword: boolean;
   twoFactorEnabled?: boolean;
+  telegramUsername?: string | null;
+  telegramConnectedAt?: string | null;
   createdAt: string;
   enrollmentsCount: number;
   solvedLabsCount: number;
@@ -465,6 +467,11 @@ export default function AdminUsersTab({ currentUserRole }: { currentUserRole: st
                         <div style={{ fontWeight: 700, color: "#f8fafc" }}>{u.name}</div>
                         <div style={{ fontSize: "0.78rem", color: "#94a3b8" }}>{u.email}</div>
                         {u.phone && <div style={{ fontSize: "0.75rem", color: "#64748b" }}>📞 {u.phone}</div>}
+                        {u.telegramUsername ? (
+                          <div style={{ fontSize: "0.75rem", color: "#38bdf8", marginTop: 2 }}>✈️ {u.telegramUsername}</div>
+                        ) : u.telegramConnectedAt ? (
+                          <div style={{ fontSize: "0.75rem", color: "#38bdf8", marginTop: 2 }}>✈️ Bot ulangan</div>
+                        ) : null}
                       </div>
                     </div>
                   </td>

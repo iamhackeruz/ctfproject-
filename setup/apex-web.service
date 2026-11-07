@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/ctf-v2/stage2_web/app
-ExecStart=/usr/bin/python3 /home/ubuntu/ctf-v2/stage2_web/app/server.py
+User=root
+WorkingDirectory=/opt/apex-ctf/stage2_web/app
+ExecStart=/usr/bin/python3 /opt/apex-ctf/stage2_web/app/server.py
 Restart=always
 RestartSec=3
 Environment=PYTHONUNBUFFERED=1

@@ -37,20 +37,23 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin2026")
 
 
 # ==============================================================================
-# ASOSIY VA MATRITSA SAHIYALARI
+# ASOSIY VA MATRITSA SAHIFALARI
 # ==============================================================================
 
 @app.route("/")
-def big_screen_matrix():
+def home():
+    """Bosh sahifa: Kirish va Ro'yxatdan o'tish xabi. Agar kirgan bo'lsa to'g'ri portalga."""
+    if "user_id" in session:
+        return redirect(url_for("portal"))
+    return render_template("index.html", active_tab="login")
+
+@app.route("/matrix")
+def matrix_view():
     """Katta ekran (Projektor) jonli matritsa ko'rinishi."""
     current_user = None
     if "user_id" in session:
         current_user = ctf_db.get_participant_by_id(session["user_id"])
     return render_template("matrix.html", current_user=current_user)
-
-@app.route("/matrix")
-def matrix_view():
-    return redirect(url_for("big_screen_matrix"))
 
 
 # ==============================================================================
@@ -70,15 +73,15 @@ def register():
         password_confirm = request.form.get("password_confirm", "").strip()
 
         if not full_name or not username or not password:
-            return render_template("register.html", error="Barcha maydonlar to'ldirilishi shart!")
+            return render_template("index.html", active_tab="register", error="Barcha maydonlar to'ldirilishi shart!")
 
         if password != password_confirm:
-            return render_template("register.html", error="Kiritilgan parollar mos kelmadi!")
+            return render_template("index.html", active_tab="register", error="Kiritilgan parollar mos kelmadi!")
 
         # Mavjudlikni tekshirish
         existing = ctf_db.get_participant_by_user(username)
         if existing:
-            return render_template("register.html", error="Bu username allaqachon ro'yxatdan o'tgan. Boshqa username tanlang.")
+            return render_template("index.html", active_tab="register", error="Bu username allaqachon ro'yxatdan o'tgan. Boshqa username tanlang.")
 
         try:
             participant = ctf_db.register_participant(
@@ -91,9 +94,9 @@ def register():
             session["token"] = participant["token"]
             return redirect(url_for("portal"))
         except Exception as e:
-            return render_template("register.html", error=f"Ro'yxatdan o'tishda xatolik: {str(e)}")
+            return render_template("index.html", active_tab="register", error=f"Ro'yxatdan o'tishda xatolik: {str(e)}")
 
-    return render_template("register.html")
+    return render_template("index.html", active_tab="register")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -113,9 +116,9 @@ def login():
             session["token"] = participant["token"]
             return redirect(url_for("portal"))
         else:
-            return render_template("login.html", error="Username yoki parol noto'g'ri!")
+            return render_template("index.html", active_tab="login", error="Username yoki parol noto'g'ri!")
 
-    return render_template("login.html")
+    return render_template("index.html", active_tab="login")
 
 
 @app.route("/logout")

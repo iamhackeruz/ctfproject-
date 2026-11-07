@@ -16,7 +16,7 @@ CURRENT_DIR = os.path.dirname(REAL_PATH)
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 sys.path.insert(0, PROJECT_ROOT)
 
-for candidate in ["/home/ubuntu/ctf-v2", "/home/user/ctf-v2", os.path.expanduser("~/ctf-v2"), os.getcwd()]:
+for candidate in ["/opt/apex-ctf", "/opt/ctf-v2", "/home/ubuntu/ctf-v2", "/home/user/ctf-v2", os.path.expanduser("~/ctf-v2"), os.getcwd()]:
     if os.path.exists(os.path.join(candidate, "core_db")) and candidate not in sys.path:
         sys.path.insert(0, candidate)
 

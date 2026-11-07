@@ -61,7 +61,18 @@ def get_server_url() -> str:
                     return u.rstrip("/")
         except Exception:
             pass
-    return ""
+
+    local_file = os.path.join(PROJECT_ROOT, "server_url.txt")
+    if os.path.exists(local_file):
+        try:
+            with open(local_file, "r") as f:
+                u = f.read().strip()
+                if u:
+                    return u.rstrip("/")
+        except Exception:
+            pass
+
+    return "https://educyber.uz"
 
 
 def main():

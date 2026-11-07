@@ -47,7 +47,12 @@ def setup_stage1(username: str = None, token: str = "APEX-DEFAULT", home_dir: st
         try:
             shutil.rmtree(corp_dir, onerror=_on_rm_error)
         except Exception:
-            shutil.rmtree(corp_dir, ignore_errors=True)
+            pass
+        if os.path.exists(corp_dir):
+            try:
+                subprocess.run(["sudo", "-n", "rm", "-rf", corp_dir], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
 
     for sub in ["01_hidden_station", "02_system_logs", "03_employee_registry",
                 "04_lost_backups", "05_restricted_vault", "06_archived_backups", "07_git_repository"]:
@@ -276,10 +281,16 @@ O'tish:
   Topilgan flaglarni markaziy serverdagi shaxsiy kabinetingizga (Portal) kiritasiz!
 ================================================================================
 """
-    with open(os.path.join(user_home, "README.txt"), "w", encoding="utf-8") as f:
-        f.write(readme_text)
-    with open(os.path.join(corp_dir, "README.txt"), "w", encoding="utf-8") as f:
-        f.write(readme_text)
+    try:
+        with open(os.path.join(user_home, "README.txt"), "w", encoding="utf-8") as f:
+            f.write(readme_text)
+    except Exception:
+        pass
+    try:
+        with open(os.path.join(corp_dir, "README.txt"), "w", encoding="utf-8") as f:
+            f.write(readme_text)
+    except Exception:
+        pass
 
     print(f"[+] 1-bosqich topshiriqlari muvaffaqiyatli tayyorlandi: {corp_dir}")
     return True

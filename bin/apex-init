@@ -90,6 +90,10 @@ def main():
 
     # 3. 2-Bosqich (Web Pentest Muhiti) sozlash
     db_init.init_apex_db(token=norm_token)
+    try:
+        subprocess.run(["systemctl", "restart", "apex-web"], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
 
     print(f"\n{CYAN}================================================================================{RESET}")
     print(f"{GREEN}  ✅ LABORATORIYA MUVAFFAQIYATLI SOZLANDI VA ISHGA TUSHIRILDI!{RESET}")

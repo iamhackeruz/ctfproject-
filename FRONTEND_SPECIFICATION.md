@@ -1,217 +1,294 @@
 # 🏢 APEX GLOBAL TECHNOLOGIES — CTF v2 PLATFORM
-## FRONTEND RE-ARCHITECTURE & PRODUCT SPECIFICATION (PRD)
-> **Hujjat maqsadi:** Yangi Frontend dasturchisi (yoki AI Agent) ushbu kiberxavfsizlik CTF musobaqasi platformasining to'liq biznes mantiqini, arxitekturasini, foydalanuvchilar yo'lini va barcha API/Backend shartnomalarini tushunishi hamda zamonaviy, jozibador va yuqori darajadagi UI/UX yaratishi uchun to'liq texnik qo'llanma.
+# COMPLETE SYSTEM & FRONTEND TECHNICAL SPECIFICATION (PRD)
+
+> **Hujjat versiyasi:** 2.4.0 (Production Master Spec)  
+> **Muallif:** Apex Cyber Architecture & Security Team  
+> **Mo'ljallangan auditoriya:** Senior Frontend Engineer / Autonomous Frontend AI Agent  
+> **Qamrovi:** Platformaning ikkala sayti:
+> 1. **Markaziy CTF Platformasi** (`educyber.uz` / port 8080: Portal, Live Matrix, Stealth Admin)
+> 2. **Zaifliklari bor Korporativ Veb-Target** (`stage2_web` / `localhost:5000`: 10 ta OWASP zaifligi)
 
 ---
 
 ## 📑 MUNDARIJA
-1. [Loyiha haqida umumiy tushuncha (Overview & Mission)](#1-loyiha-haqida-umumiy-tushuncha)
-2. [Tizim Arxitekturasi (Client-Server Architecture)](#2-tizim-arxitekturasi)
-3. [Musobaqa Qoidalari va 3 ta Bosqich](#3-musobaqa-qoidalari-va-3-ta-bosqich)
-4. [Foydalanuvchi Rollari va Ssenariylari (User Personas)](#4-foydalanuvchi-rollari-va-ssenariylari)
-5. [Sahifalar Xaritasi va UI Talablari (Information Architecture)](#5-sahifalar-xaritasi-va-ui-talablari)
-6. [Backend API va SSE Stream Shartnomalari (API Contracts)](#6-backend-api-va-sse-stream-shartnomalari)
-7. [Dizayn Tizimi va Estetika (Cyberpunk / SOC Design System)](#7-dizayn-tizimi-va-estetika)
-8. [Xavfsizlik va Yashirinlik Qoidalari (Security Constraints)](#8-xavfsizlik-va-yashirinlik-qoidalari)
+1. [Loyiha Maqsadi va Arxitektura Modeli](#1-loyiha-maqsadi-va-arxitektura-modeli)
+2. [Ikki Xil Saytning Vazifaviy Taqsimoti](#2-ikki-xil-saytning-vazifaviy-taqsimoti)
+3. [Dinamik Token va Flag Dvigateli (Anti-Cheat Mantiqi)](#3-dinamik-token-va-flag-dvigateli)
+4. [1-Sayt: Markaziy CTF Platformasi — Sahifalar va UX](#4-1-sayt-markaziy-ctf-platformasi--sahifalar-va-ux)
+5. [2-Sayt: Zaifliklari bor Veb-Target — 10 ta OWASP Top 10](#5-2-sayt-zaifliklari-bor-veb-target--10-ta-owasp-top-10)
+6. [To'liq Backend API, JSON Payloadlar va Shartnomalar](#6-toliq-backend-api-json-payloadlar-va-shartnomalar)
+7. [Dizayn Tizimi (Design Tokens, CSS & Tailwind Config)](#7-dizayn-tizimi-design-tokens-css--tailwind-config)
+8. [Xavfsizlik, Stealth Admin va SSE Jonli Oqim Qoidalari](#8-xavfsizlik-stealth-admin-va-sse-jonli-oqim-qoidalari)
 
 ---
 
-## 1. LOYIHA HAQIDA UMUMIY TUSHUNCHA
+## 1. LOYIHA MAQSADI VA ARXITEKTURA MODELI
 
-**Apex Global Technologies CTF v2** — bu korporativ darajadagi amaliy kiberxavfsizlik musobaqasi platformasi bo'lib, axborot xavfsizligi bo'yicha mutaxassislar, talabalar va pentesterlarning amaliy ko'nikmalarini baholash uchun yaratilgan.
+**Apex Global Technologies CTF v2** — professional kiberxavfsizlik musobaqasi ekotizimidir.
 
-### Platformaning asosiy maqsadi:
-* Ishtirokchilarni haqiqiy korporativ infratuzilmaga uyushtiriladigan kiber-hujumlarni tahlil qilish, Linux tizim auditini o'tkazish, OWASP Top 10 veb zaifliklarini fosh qilish va professional kiberxavfsizlik hisobotini (Incident Report) tuzishga o'rgatish.
-* **Ko'chirmakashlikni (Plagiarizm / Flag sharing) 100% yo'q qilish:** Har bir ishtirokchiga individual **Shaxsiy Token** (masalan `APEX-ZLF9`) beriladi. Tizimdagi barcha 17 ta flag ushbu token asosida deterministik kriptografik formula (HMAC-SHA256) bilan generatsiya qilinadi. Bitta talabaning topgan flagi ikkinchi talabaga umuman to'g'ri kelmaydi!
-
----
-
-## 2. TIZIM ARXITEKTURASI
-
-Tizim taqsimlangan **Mijoz-Server (Client-Server)** modeli asosida ishlaydi:
+### Tizim Arxitekturasi:
+Musobaqa taqsimlangan **Mijoz-Server (Client-Server)** modeli asosida ishlaydi:
 
 ```
-                  ┌─────────────────────────────────────────────────────────────┐
-                  │            MARKAZIY SERVER (educyber.uz)                    │
-                  │   • Web Dashboard (Port 8080 orqali Nginx proksida)          │
-                  │   • SQLite Database (/var/ctf/ctf_v2.db)                    │
-                  │   • Real-vaqt SSE Stream (/api/live/stream)                 │
-                  │   • Markaziy Flag Engine (HMAC-SHA256 tekshiruv)             │
-                  └───────────────▲───────────────────────────────▲─────────────┘
-                                  │                               │
-                      HTTP / SSE  │                   POST JSON   │
-                      (Brauzer)   │                   (/api/submit)│
-                                  │                               │
-         ┌────────────────────────┴────────┐             ┌────────┴────────────────────────┐
-         │ TALABA NOMI: Ali (APEX-ZLF9)    │             │ TALABA NOMI: Vali (APEX-K7X2)   │
-         │ VIRTUALBOX VM (OVA)             │             │ VIRTUALBOX VM (OVA)             │
-         │ • ~/apex_corp (7 ta Linux topsh)│             │ • ~/apex_corp (7 ta Linux topsh)│
-         │ • localhost:5000 (OWASP Web)    │             │ • localhost:5000 (OWASP Web)    │
-         │ • CLI: apex-init, check         │             │ • CLI: apex-init, check         │
-         └─────────────────────────────────┘             └─────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       MARKAZIY SERVER (educyber.uz)                         │
+│  • Flask Backend (Port 8080 / Nginx Reverse Proxy)                           │
+│  • Markaziy SQLite bazasi: /var/ctf/ctf_v2.db                               │
+│  • SSE Oqimi: GET /api/live/stream                                          │
+│  • Flag tekshiruv API: POST /api/submit_flag                                 │
+└───────────────────────▲─────────────────────────────▲───────────────────────┘
+                        │ HTTP / SSE                  │ AJAX / CLI POST
+                        │ (Brauzer)                   │ (/api/submit_flag)
+         ┌──────────────┴──────────────────┐   ┌──────┴────────────────────────┐
+         │ TALABA 1 VM (APEX-ZLF9)         │   │ TALABA 2 VM (APEX-K7X2)       │
+         │ • ~/apex_corp (7 ta Linux topsh)│   │ • ~/apex_corp (7 ta Linux topsh│
+         │ • localhost:5000 (OWASP Target) │   │ • localhost:5000 (OWASP Target│
+         │ • CLI: apex-init, check         │   │ • CLI: apex-init, check       │
+         └─────────────────────────────────┘   └───────────────────────────────┘
 ```
 
-1. **Markaziy Server (educyber.uz):**
-   * Barcha ishtirokchilar ro'yxatdan o'tadi, tizimga kiradi va o'z Shaxsiy Portallariga kiradi.
-   * Katta zaldagi projektor/ekran uchun real-vaqtdagi **Jonli Hujum Matritsasi (Live Attack Matrix)** uzatiladi.
-   * Flag topshirilganda server uni darhol hisoblab, ball qo'shadi va jonli matritsani yangilaydi.
-   * Hakamlar (Admin) uchun yashirin boshqaruv paneli joylashgan.
-2. **Talaba Virtual Mashinasi (Ubuntu OVA):**
-   * Har bir talabaning shaxsiy kompyuterida alohida izolyatsiyalangan Ubuntu VM ochiladi.
+1. **Markaziy Server (`educyber.uz` / port 8080):**
+   * Ishtirokchilar ro'yxatdan o'tadi, tizimga kiradi va o'z Shaxsiy Portallariga (`/portal`) kiradi.
+   * Katta zaldagi projektor/ekran uchun real-vaqtdagi **Jonli Hujum Matritsasi (`/matrix`)** uzatiladi.
+   * Hakamlar hay'ati uchun yashirin boshqaruv paneli (`/admin`) joylashgan.
+2. **Talaba Virtual Mashinasi (Ubuntu 26.04 OVA):**
+   * Har bir talabaning noutbukida VirtualBox ichida izolyatsiyalangan Ubuntu VM ishlaydi.
    * VM ichida 1-bosqich topshiriqlari (`~/apex_corp`) va 2-bosqich veb ilovasi (`http://localhost:5000`) ishlaydi.
-   * Talaba VM yoqilganda `apex-init` buyrug'i orqali saytdan olgan tokenini kiritadi va uning laboratoriyasi o'z tokeniga moslashtiriladi.
 
 ---
 
-## 3. MUSOBAQA QOIDALARI VA 3 TA BOSQICH
+## 2. IKKI XIL SAYTNING VAZIFAVIY TAQSIMOTI
 
-Musobaqa jami **4500 ball**dan iborat bo'lib, 3 ta ketma-ket bosqichni o'z ichiga oladi:
+Frontend ishlab chiquvchi bilishi shart bo'lgan eng muhim jihat — loyihada **ikkita butunlay xilma-xil sayt** mavjud:
 
-### 1-Bosqich: Korporativ Linux Tizim Auditi (Jami 500 ball)
-Topshiriqlar VM ichida `~/apex_corp` katalogida joylashgan:
-* `L1` (50 ball) — Yashirin stansiya ma'lumotlari (`01_hidden_station/.apex_sys_flag`)
-* `L2` (50 ball) — Server loglaridan favqulodda kalit (`02_system_logs/server_startup.log`)
-* `L3` (75 ball) — Xodimlar reestridan token qidirish (`03_employee_registry/employees.csv`)
-* `L4` (75 ball) — Ichki chuqur arxivdan zaxira faylini topish (`04_lost_backups/.../.recovery_vault`)
-* `L5` (75 ball) — Himoyalangan kassa ruxsatini tiklash (chmod 000) (`05_restricted_vault/.vault_passphrase.txt`)
-* `L6` (75 ball) — Hodisalar arxivi paketini ochish (tar.gz) (`06_archived_backups/backup.tar.gz`)
-* `L7` (100 ball) — Git commitlar tarixidan o'chirilgan sirni tiklash (`07_git_repository/apex-api`)
-
-### 2-Bosqich: OWASP Top 10 Web Zaifliklar Eksploitatsiyasi (Jami 3000 ball)
-VM ichida `http://localhost:5000` manzilida ishlayotgan Apex Corp ichki portali:
-* `V1` (100 ball) — Information Disclosure (`/.git/HEAD`)
-* `V2` (150 ball) — User Enumeration & Response Header (`/login`)
-* `V3` (200 ball) — Rate-Limit Bypass via `X-Forwarded-For` (`/portal/staff-login`)
-* `V4` (250 ball) — IDOR (Insecure Direct Object Reference) (`/portal/employee/contract?id=1`)
-* `V5` (250 ball) — Stored XSS & Admin Cookie Theft (`/support/ticket`)
-* `V6` (300 ball) — LFI / Path Traversal (`/download?doc=../../vault/.env.vault`)
-* `V7` (350 ball) — SQL Injection UNION-based (`/services/search`)
-* `V8` (400 ball) — Insecure File Upload / Webshell Bypass (`/careers/apply`)
-* `V9` (500 ball) — JWT Role Manipulation / Privilege Escalation (`/admin/executive-board`)
-* `V10` (500 ball) — Remote Code Execution (RCE) (`/admin/diagnostics/ping`)
-
-### 3-Bosqich: Professional Hodisa Hisoboti (Incident Report) (Jami 1000 ball)
-* **Qachon ochiladi:** 2-bosqichda kamida **1200 ball** to'plagan ishtirokchilar uchun portalda avtomatik ochiladi (unlock bo'ladi).
-* Ishtirokchi qilingan hujumlar, zaifliklar va ularni to'g'irlash bo'yicha PDF yoki DOCX formatida hisobot tayyorlab, portalga yuklaydi.
-* Hakamlar hay'ati admin panel orqali hisobotni ko'rib chiqib, 0 dan 1000 ballgacha baholaydi va tahliliy izoh (feedback) qoldiradi.
+| Parametr | 1-Sayt: Markaziy CTF Platformasi | 2-Sayt: Zaifliklari bor Target Sayt |
+| :--- | :--- | :--- |
+| **Joylashuvi** | Markaziy Server (`https://educyber.uz:8080`) | Talaba VM ichida (`http://localhost:5000`) |
+| **Katalogi** | `dashboard/templates` va `dashboard/static` | `stage2_web/app/templates` va `static` |
+| **Maqsadi** | Musobaqani boshqarish, ballar, jonli matritsa | Pentest qilinadigan "qurbon" tizim |
+| **Dizayn Uslubi** | **Cyberpunk / SOC Dark Neon / High-Tech Glass** | **Enterprise Corporate Portal / White-Collar Business** |
+| **Foydalanuvchi** | Talaba (Portal), Hakam (Admin), Auditoriya (Matritsa) | Pentester (Zaiflik qidirayotgan talaba) |
+| **O'zgartirish ruxsati** | UI/UX to'liq erkin, zamonaviy qilib qayta yoziladi | UI modernizatsiya qilinadi, **LEKIN formalar/inputlar buzilmasligi shart!** |
 
 ---
 
-## 4. FOYDALANUVCHI ROLLARI VA SSENARIYLARI
+## 3. DINAMIK TOKEN VA FLAG DVIGATELI
 
-Platformada **3 xil foydalanuvchi tajribasi (UX)** mavjud:
+Musobaqada ko'chirmakashlikni (plagiarizmni) 100% yo'q qilish uchun deterministik kriptografik formula ishlatiladi.
 
-### 1. Ishtirokchi (Talaba / Ethical Hacker)
-* Saytga kiradi (`/`), Ro'yxatdan o'tadi (`Ism-familiya`, `username`, `parol`).
-* Tizim unga avtomatik **Shaxsiy Token** beradi (masalan: `APEX-ZLF9`).
-* Shaxsiy kabinetiga (`/portal`) o'tadi:
-  - O'z tokenini ko'radi va bir marta bosish bilan nusxalab oladi.
-  - O'zining jami to'plagan balli, joriy o'rni va bosqichini ko'radi.
-  - Barcha 17 ta topshiriqning interaktiv kartochkalari (yechilgan/yechilmagan holati).
-  - Har bir kartochkada darhol flag kiritish uchun AJAX maydoni mavjud.
-  - 1200 ball to'plagach, 3-bosqich hisobot yuklash bo'limi ochiladi.
-
-### 2. Tomoshabinlar / Zaldagi Katta Ekran (Projektor Matritsasi)
-* Katta ekranda `/matrix` sahifasi to'liq ekran (F11) rejimida ochiq turadi.
-* **Hech qanday sahifani qayta yuklash (refresh) talab qilinmaydi:** Server-Sent Events (SSE) orqali har safar kimdir flag topshirsa, jadval jonli animatsiya bilan qayta saralanadi.
-* Yuqori qismda kiber-xabarlar yuguruvchi satri (Live Ticker) bo'ladi.
-* **Xavfsizlik:** Matritsada ishtirokchilarning tokenlari yoki maxfiy kalitlari **hech qachon** ko'rsatilmaydi!
-
-### 3. Hakam / Administrator (Stealth Admin)
-* **Yashirin kirish:** Saytda alohida "Admin Login" tugmasi yo'q! Admin oddiy bosh sahifadagi login formaga maxsus login va parolni kiritadi:
-  - Login: `wow` (yoki `admin`, `wow?`)
-  - Parol: `centerlar000`
-* Tizim avtomatik admin ekanligini bilib, uni `/admin` paneliga yo'naltiradi.
-* Agar oddiy foydalanuvchi `/admin` manzilini qo'lda terib kirmoqchi bo'lsa, tizim stealth 404 (Not Found) qaytaradi.
-* Admin panelida:
-  - Barcha talabalar ro'yxati, real-vaqt saralanishi.
-  - Talabalar topshirgan hisobot fayllarini (PDF/DOCX) brauzerda ko'rish va yuklab olish.
-  - Hisobotni baholash (0..1000) va izoh qoldirish.
-  - Natijalarni Excel (.xlsx) formatida bir zumda eksport qilish.
-  - Qoidabuzar talabaning ballarini nolga tushirish (Reset).
+* Har bir talaba ro'yxatdan o'tganda unga individual token beriladi: masalan `APEX-ZLF9` yoki `APEX-7F92`.
+* Flaglar formulasi:  
+  `FLAG{prefix_HMAC_SHA256(MASTER_SALT, token:challenge_code)[:12]}`
+* **Natija:** 
+  - Talaba 1 (`APEX-ZLF9`) uchun `V1` flagi: `FLAG{v2_web_01_git_leak_9a2f1c84b0e3}`
+  - Talaba 2 (`APEX-K7X2`) uchun `V1` flagi: `FLAG{v2_web_01_git_leak_4d7e01f5c8a2}`
+* Talabalar bir-biridan flag ko'chirsa, server qabul qilmaydi!
 
 ---
 
-## 5. SAHIFALAR XARITASI VA UI TALABLARI
+## 4. 1-SAYT: MARKAZIY CTF PLATFORMASI — SAHIFALAR VA UX
 
-Yangi Frontend quyidagi 4 ta asosiy sahifa va modallarni o'z ichiga olishi kerak:
+Ushbu sayt `dashboard/server.py` orqali boshqariladi. Yangi UI quyidagi 4 ta asosiy sahifani o'z ichiga olishi shart:
 
-```
-/ (Bosh Sahifa) ──┬──> [Tab 1: Kirish (Login)] ──> Talaba bo'lsa -> /portal
-                  │                            ──> Admin bo'lsa  -> /admin
-                  ├──> [Tab 2: Ro'yxatdan o'tish (Register)] ──> /portal
-                  └──> [Link: Katta Ekran Jonli Matritsasi] ──> /matrix
+### 4.1. Bosh Sahifa / Kirish Xabi (`/` va `/login`, `/register`)
+* **URL:** `GET /`
+* **UI Komponentlari:**
+  - Markazda futuristik Cyberpunk login kartochkasi.
+  - Tab 1: **"Tizimga Kirish (Login)"** — Maydonlar: `username`, `password`.
+  - Tab 2: **"Ro'yxatdan O'tish (Register)"** — Maydonlar: `full_name`, `username`, `password`, `password_confirm`.
+  - Pastki qismda: **"Katta Ekran Jonli Matritsasi"** havolasi (`/matrix`).
+* **Stealth Admin Kirish:**
+  - Agar foydalanuvchi `username` maydoniga `wow` (yoki `admin`, `wow?`) va `password` maydoniga `centerlar000` kiritsa — tizim uni avtomatik `/admin` paneliga yo'naltiradi. Hech qanday "Admin login" tugmasi bo'lmaydi!
 
-/portal (Talaba Shaxsiy Kabineti)
-├── Token ko'rsatish va nusxalash kartasi (Hero Banner)
-├── Progress Dashboard (Jami Ball, O'rin, 1-Bosqich, 2-Bosqich, 3-Bosqich)
-├── 1-Bosqich (Linux Audit - 7 ta topshiriq kartasi + Flag submit input)
-├── 2-Bosqich (Web Pentest - 10 ta topshiriq kartasi + Flag submit input)
-└── 3-Bosqich (Hisobot yuklash drag & drop formasi + baho va feedback)
+### 4.2. Talaba Shaxsiy Portali (`/portal`)
+* **URL:** `GET /portal` (Faqat tizimga kirgan talaba uchun, aks holda `/login` ga redirect).
+* **UI Komponentlari:**
+  1. **Token Hero Banner (Security Badge):**
+     - Talabaning shaxsiy tokeni (masalan: `APEX-ZLF9`) ko'zga tashlanadigan yorqin neon badge shaklida ko'rsatiladi.
+     - Yonida **"Nusxalash" (Copy)** tugmasi va bosilganda *"Nusxalandi!"* animatsiyasi.
+     - Qo'llanma: *"Ushbu tokenni virtual mashinangizda `apex-init` buyrug'iga kiriting!"*
+  2. **Statistika Vidjetlari:**
+     - Jami to'plangan ball (`total_score` / 4500)
+     - 1-Bosqich: Linux Tizim Auditi (`stage1_solved_count` / 7 topshiriq)
+     - 2-Bosqich: Web Pentest (`stage2_solved_count` / 10 zaiflik)
+     - 3-Bosqich: Hisobot Statusi (`Topshirildi` / `1200b to'planganda ochiladi`)
+  3. **1-Bosqich Topshiriqlar Kartalari (7 ta karta - L1..L7):**
+     - Har bir kartada: Kod (`L1`), Nom, Qiyinlik, Ball (`+50b`), Ta'rif, Holat (Yechilgan bo'lsa yashil galochka, yechilmagan bo'lsa qulf).
+     - Flag kiritish uchun mini AJAX input va "Tekshirish" tugmasi.
+  4. **2-Bosqich Veb Zaifliklar Kartalari (10 ta karta - V1..V10):**
+     - Har bir kartada: Kod (`V1`..`V10`), Zaiflik nomi (OWASP Top 10), Ball (`100b`..`500b`), Holat.
+     - Flag kiritish uchun mini AJAX input va "Tekshirish" tugmasi.
+  5. **3-Bosqich Hisobot Yuklash Bloki (Incident Report):**
+     - Agar 2-bosqich balli < 1200 bo'lsa: Blok qulflangan holatda turadi va *"2-bosqichda kamida 1200 ball to'plaganingizda ochiladi"* yozuvi chiqadi.
+     - Agar ball >= 1200 bo'lsa: Qulf ochiladi, zamonaviy Drag & Drop fayl yuklash maydoni ochiladi (`.pdf`, `.docx`).
+     - Hisobot yuklangach: *"Hisobotingiz hakamlar ko'rigida"* holati va hakam baholasa baho (`report_score`) hamda hakam izohi (`report_feedback`) ko'rsatiladi.
 
-/matrix (Katta Ekran Jonli Matritsasi - Projektor rejimi)
-├── Header: Logo, Jonli Soat, Musobaqa Statusi, To'liq ekran tugmasi (Fullscreen)
-├── Yuguruvchi xabarlar tasmasi (Live Attack Ticker)
-└── Asosiy Matritsa Jadvali:
-    ├── Reyting (#, 🥇, 🥈, 🥉)
-    ├── Haker (Ism-Familiya)
-    ├── Bosqich holati (1-Linux / 2-Web / 3-Report / Tugatgan)
-    ├── Jami Ball
-    ├── 10 ta Veb zaiflik katakchalari (V1..V10) — Yechilgan (Yashil/Check) yoki Qulflangan
-    └── 3-Bosqich statusi (Qulflangan / Ochildi / Topshirildi / Baholandi)
+### 4.3. Katta Ekran Jonli Matritsasi (`/matrix`)
+* **URL:** `GET /matrix` (Barcha uchun ochiq, projektorga chiqariladi).
+* **UI Komponentlari:**
+  1. **Top Header:**
+     - Korporativ logo: **APEX GLOBAL TECHNOLOGIES — LIVE ATTACK MATRIX**
+     - Jonli kiber-soat (`HH:MM:SS`)
+     - Aloqa indikatori (`Jonli SSE Ulanish` yashil miltillovchi nuqta)
+     - To'liq ekran tugmasi (`Fullscreen F11`)
+  2. **Jonli Xabarlar Tasmasi (Attack Ticker):**
+     - Yuqorida yuguruvchi satr: *"🔥 Ali Valiyev [V1: Information Disclosure] zaifligini fosh qildi! (+100 ball) • 💻 Dilshod [L2] topshirig'ini bajardi!"*
+     - **DIQQAT:** Tokenlar yoki shaxsiy ID lar bu yerda HECH QACHON ko'rsatilmaydi!
+  3. **Asosiy Matritsa Jadvali (Leaderboard & Attack Grid):**
+     - Ustunlar:
+       1. `#` (O'rin: 🥇, 🥈, 🥉, 4...)
+       2. `Hujumchi / Ishtirokchi` (To'liq ism-familiya)
+       3. `Bosqich` (Badge: `1-Linux (3/7)`, `2-Web (450b)`, `3-Report`, `G'olib`)
+       4. `Jami Ball` (Yirik neon son)
+       5. `V1` dan `V10` gacha 10 ta ustun:
+          - Yechilgan bo'lsa: Yashil katakcha, ichida checkmark va ball (`+100`)
+          - Yechilmagan bo'lsa: To'q qora katakcha, qulf belgisi
+       6. `3-Bosqich (Hisobot)`: Status badge (`Qulflangan`, `Ochildi`, `Topshirildi`, `+850b`)
 
-/admin (Hakamlar va Admin Paneli - Faqat ruxsat berilganlar uchun)
-├── Statistika bloklari (Jami qatnashchilar, Faollar, Yakunlaganlar, Excel export)
-├── Ishtirokchilar jadvali (Barcha bosqichlar progressi va vaqtlari)
-├── Hisobotlarni baholash modali (Baholash, feedback yozish)
-└── Ishtirokchini qayta sozlash (Reset) amallari
-```
+### 4.4. Hakamlar va Admin Paneli (`/admin`)
+* **URL:** `GET /admin` (Faqat avtorizatsiyadan o'tgan admin uchun; boshqalarga `404 Not Found`).
+* **UI Komponentlari:**
+  1. Statistika kartalari (Jami ishtirokchilar, Faollar, Yakunlaganlar, Yuklangan hisobotlar).
+  2. **Excel Eksport tugmasi:** Bir marta bosish bilan `CTF_v2_Natijalar_YYYYMMDD.xlsx` faylini yuklab beradi.
+  3. **Ishtirokchilar Boshqaruv Jadvali:**
+     - Har bir ishtirokchining 1-bosqich va 2-bosqichdagi aniq sarflagan vaqti (`1s 14d 22s`).
+     - 3-Bosqich hisobotini yuklab olish va ko'rish havolasi.
+     - **Baholash tugmasi (Modal):** Hakam 0 dan 1000 gacha ball qo'yadi va matnli feedback yozadi.
+     - **Qayta sozlash (Reset) tugmasi:** Qoidabuzar talabaning ballarini tasdiqlash bilan nolga tushiradi.
 
 ---
 
-## 6. BACKEND API VA SSE STREAM SHARTNOMALARI
+## 5. 2-SAYT: ZAIFLIKLARI BOR VEB-TARGET — 10 TA OWASP TOP 10
 
-Yangi frontend backend bilan to'liq integratsiya bo'lishi uchun quyidagi endpointlarni ishlatadi:
+Bu sayt talaba VM ichida `stage2_web/app/` katalogida ishlaydi (`http://localhost:5000`).
+Uning dizaynini yangilashda **barcha backend marshrutlari, HTML forma `action`, `method` va `input` nomlari 100% o'zgarmasdan saqlanishi SHART!**
 
-### 1. Autentifikatsiya va Ro'yxatdan O'tish
+Quyida 10 ta zaiflikning frontend texnik xaritasi:
 
-#### A. Ro'yxatdan o'tish: `POST /register`
-* **Form-data / URL-encoded:**
-  - `full_name`: Talabaning to'liq ismi (masalan: `Ali Valiyev`)
-  - `username`: Login (kichik harflarda, probellarsiz, masalan: `alivaliyev`)
-  - `password`: Parol
-  - `password_confirm`: Parolni tasdiqlash
-* **Muvaffaqiyatli bo'lsa:** Redirect `/portal` ga (va sessiya o'rnatiladi).
-* **Xatolik bo'lsa:** Sahifada `error` xabari ko'rsatiladi.
+### V1 — Information Disclosure (`/.git/HEAD`)
+* **Ball:** 100
+* **Frontend vazifasi:** Sayt footerida yoki `robots.txt` da dasturchilar eslatmasi yoki git commitlari haqida nozik ishora bo'lishi mumkin. Fayl backendda statik mavjud: `/.git/HEAD`.
 
-#### B. Tizimga kirish: `POST /login`
-* **Form-data / URL-encoded:**
-  - `username`: Foydalanuvchi logini (yoki Admin login: `wow`)
-  - `password`: Parol
-* **Muvaffaqiyatli bo'lsa:**
-  - Agar admin bo'lsa: Redirect `/admin`
-  - Agar talaba bo'lsa: Redirect `/portal`
-* **Xatolik bo'lsa:** Sahifada `error` xabari ko'rsatiladi.
+### V2 — User Enumeration & Response Header (`/login`)
+* **Ball:** 150
+* **Frontend Endpoint:** `POST /login`
+* **Forma inputlari:**
+  - `<input type="text" name="username">`
+  - `<input type="password" name="password">`
+* **Mantiq:** Agar mavjud foydalanuvchi (`asmith`, `admin`) kiritilib parol xato bo'lsa, server javobida `X-Apex-User-Status: UserExists` sarlavhasi va `Parol noto'g'ri!` xabari chiqadi. Agar mavjud bo'lmagan user kiritilsa `Foydalanuvchi topilmadi!` chiqadi. Flag to'g'ri login bo'lganda beriladi.
 
-#### C. Chiqish: `GET /logout`
-* Sessiyani tozalaydi va `/` bosh sahifaga yo'naltiradi.
+### V3 — Rate-Limit Bypass via `X-Forwarded-For` (`/portal/staff-login`)
+* **Ball:** 200
+* **Frontend Endpoint:** `POST /portal/staff-login`
+* **Forma inputlari:**
+  - `<input type="text" name="staff_id">` (To'g'ri qiymat: `APEX-EMP-9021`)
+  - `<input type="password" name="pin">` (To'g'ri 4 xonali PIN: `7492`)
+* **Mantiq:** 3 ta urinishdan keyin IP bloklanadi. Hujumchi HTTP sarlavhasiga `X-Forwarded-For: random_ip` qo'shib cheklovni chetlab o'tadi va PIN ni topadi.
+
+### V4 — Insecure Direct Object Reference (IDOR) (`/portal/employee/contract`)
+* **Ball:** 250
+* **Frontend Endpoint:** `GET /portal/employee/contract?id=1`
+* **Query param:** `id` (Parametr nomi: `id`)
+* **Mantiq:** Boshqaruv panelida xodimning o'z shartnomasi `?id=3` bo'ladi. Hujumchi URL dagi `id` ni `1` (CEO Dr. Robert Vance) ga o'zgartirganda bosh direktorning maxfiy shartnomasi va flag ochiladi.
+
+### V5 — Stored XSS & Admin Cookie Theft (`/support/ticket`)
+* **Ball:** 250
+* **Frontend Endpoint:** `POST /support/ticket`
+* **Forma inputlari:**
+  - `<input type="text" name="subject">`
+  - `<textarea name="message"></textarea>`
+* **Mantiq:** Foydalanuvchi yuborgan tiket admin panelida filtrlanmasdan ko'rsatiladi. XSS skript yuborilganda admin cookie (`apex_admin_session`) o'g'irlanadi va flag olinadi.
+
+### V6 — LFI / Path Traversal (`/download` yoki `/portal/docs/view`)
+* **Ball:** 300
+* **Frontend Endpoint:** `GET /download?doc=../../vault/.env.vault`
+* **Query param:** `doc` (Parametr nomi: `doc`)
+* **Mantiq:** Hujjatlarni yuklab olish sahifasida `doc` parametri orqali serverning ichki `.env.vault` konfiguratsiya fayli o'qiladi.
+
+### V7 — SQL Injection UNION-based (`/services/search`)
+* **Ball:** 350
+* **Frontend Endpoint:** `GET /services/search?q=' UNION SELECT ...`
+* **Query param:** `q` (Qidiruv maydoni nomi: `q`)
+* **Mantiq:** Qidiruv maydonida SQL Injection zaifligi mavjud. Natijalar jadvalida yashirin `apex_secrets` jadvalidagi flag chiqadi.
+
+### V8 — Insecure File Upload / Webshell Bypass (`/careers/apply`)
+* **Ball:** 400
+* **Frontend Endpoint:** `POST /careers/apply`
+* **Forma inputlari:**
+  - `<input type="text" name="full_name">`
+  - `<input type="email" name="email">`
+  - `<input type="text" name="position">`
+  - `<input type="file" name="resume">` (Fayl input nomi: `resume`)
+* **Mantiq:** CV yuklash formasida MIME-type yoki kengaytma filtrini chetlab o'tib webshell yuklanadi va `/static/uploads/resumes/` dan ishga tushiriladi.
+
+### V9 — JWT Role Manipulation / Privilege Escalation (`/admin/executive-board`)
+* **Ball:** 500
+* **Frontend Endpoint:** `GET /admin/executive-board`
+* **Cookie nomi:** `apex_jwt`
+* **Mantiq:** Foydalanuvchi JWT tokenidagi `"role": "guest"` ni `"role": "board_member"` ga o'zgartirib, kengash yashirin flagini qo'lga kiritadi.
+
+### V10 — Remote Code Execution (RCE) (`/admin/diagnostics/ping`)
+* **Ball:** 500
+* **Frontend Endpoint:** `POST /admin/diagnostics/ping`
+* **Forma inputlari:**
+  - `<input type="text" name="ip">` (Input nomi: `ip`)
+* **Mantiq:** Tarmoqni tekshirish uchun ping formasi: `127.0.0.1; cat /home/ubuntu/ctf-v2/stage2_web/app/vault/master_flag.txt`. Buyruq inyeksiyasi orqali bosh server flagi fosh qilinadi.
 
 ---
 
-### 2. Flag Topshirish API: `POST /api/submit_flag`
-Talaba portal orqali (AJAX) yoki terminaldagi `check` buyrug'i orqali flag yuborganda ishlaydi.
+## 6. TO'LIQ BACKEND API, JSON PAYLOADLAR VA SHARTNOMALAR
 
-* **Headers:** `Content-Type: application/json`
+Markaziy serverning barcha API endpointlari, JSON tuzilmalari va xatolik javoblari:
+
+### 6.1. Ro'yxatdan O'tish: `POST /register`
+* **URL:** `/register`
+* **Method:** `POST`
+* **Content-Type:** `application/x-www-form-urlencoded`
 * **Request Body:**
+  ```
+  full_name=Rustam+Karimov&username=rustam_sec&password=SecurePass2026!&password_confirm=SecurePass2026!
+  ```
+* **Muvaffaqiyatli javob (Status 302 Redirect):**
+  - Foydalanuvchi sessiyasi yaratiladi: `session['user_id']`, `session['username']`, `session['token']`.
+  - Redirect: `/portal`
+* **Xatolik javobi (Status 200 OK — index.html render):**
+  - Jinja2 o'zgaruvchisi: `active_tab="register"`, `error="Bu username allaqachon ro'yxatdan o'tgan. Boshqa username tanlang."`
+
+---
+
+### 6.2. Tizimga Kirish: `POST /login`
+* **URL:** `/login`
+* **Method:** `POST`
+* **Content-Type:** `application/x-www-form-urlencoded`
+* **Request Body:**
+  ```
+  username=rustam_sec&password=SecurePass2026!
+  ```
+* **Muvaffaqiyatli javob (Status 302 Redirect):**
+  - Oddiy talaba uchun -> `/portal`
+  - Stealth Admin (`wow` / `centerlar000`) uchun -> `/admin`
+* **Xatolik javobi (Status 200 OK — index.html render):**
+  - Jinja2 o'zgaruvchisi: `active_tab="login"`, `error="Username yoki parol noto'g'ri!"`
+
+---
+
+### 6.3. Flag Tekshirish va Topshirish: `POST /api/submit_flag`
+* **URL:** `/api/submit_flag`
+* **Method:** `POST`
+* **Content-Type:** `application/json` (yoki `application/x-www-form-urlencoded`)
+* **Request Headers:**
+  - `Content-Type: application/json`
+  - `X-Requested-With: XMLHttpRequest` (AJAX bo'lsa)
+* **Request Payload (JSON):**
   ```json
   {
     "flag": "FLAG{v2_linux_01_hidden_ls_a8f9c1e204b7}",
     "token": "APEX-ZLF9"
   }
   ```
-  *(Izoh: Agar foydalanuvchi brauzerda tizimga kirgan bo'lsa, `token` yuborish shart emas, sessiyadan olinadi).*
+  *(Eslatma: Agar talaba brauzer orqali tizimga kirgan bo'lsa, `token` yuborish ixtiyoriy, sessiyadan avtomatik aniqlanadi).*
 
-* **Response (Muvaffaqiyatli - 200 OK):**
+* **Muvaffaqiyatli Javob (200 OK):**
   ```json
   {
     "success": true,
@@ -219,146 +296,295 @@ Talaba portal orqali (AJAX) yoki terminaldagi `check` buyrug'i orqali flag yubor
     "code": "L1",
     "points": 50,
     "title": "Yashirin stansiya ma'lumotlari",
-    "new_total_score": 50
+    "new_total_score": 550
   }
   ```
 
-* **Response (Xatolik - 200 OK yoki 400):**
-  ```json
-  {
-    "success": false,
-    "message": "Noto'g'ri flag! Qaytadan urinib ko'ring."
-  }
-  ```
+* **Xatolik Javoblari:**
+  - **Noto'g'ri Flag (200 OK):**
+    ```json
+    {
+      "success": false,
+      "message": "Noto'g'ri flag! Qaytadan urinib ko'ring."
+    }
+    ```
+  - **Allaqachon topshirilgan Flag (200 OK):**
+    ```json
+    {
+      "success": false,
+      "message": "Siz bu flagni allaqachon topshirgansiz!"
+    }
+    ```
+  - **Autentifikatsiyadan o'tilmagan (401 Unauthorized):**
+    ```json
+    {
+      "success": false,
+      "message": "Avtorizatsiyadan o'tilmagan. Avval tizimga kiring!"
+    }
+    ```
+  - **Bo'sh Flag (400 Bad Request):**
+    ```json
+    {
+      "success": false,
+      "message": "Flag kiritilmadi!"
+    }
+    ```
 
 ---
 
-### 3. Hisobot Yuklash: `POST /portal/upload_report`
-* **Headers:** `multipart/form-data`
-* **Form field:** `report` (Fayl: `.pdf`, `.docx`, `.doc`, `.zip`)
-* **Muvaffaqiyatli bo'lsa:** Faylni saqlaydi, bazaga yozadi va `/portal` ga redirect qiladi.
-
----
-
-### 4. Jonli Matritsa Ma'lumotlari: `GET /api/live/matrix`
-* **Response (JSON):**
+### 6.4. Jonli Matritsa Ma'lumotlari: `GET /api/live/matrix`
+* **URL:** `/api/live/matrix`
+* **Method:** `GET`
+* **Response Payload (JSON):**
   ```json
   {
     "total_challenges": 10,
     "stage3_threshold": 1200,
     "challenges": [
-      { "id": 1, "code": "V1", "title": "Information Disclosure", "points": 100, "difficulty": "Oson" },
-      { "id": 2, "code": "V2", "title": "User Enumeration", "points": 150, "difficulty": "Oson" }
+      {
+        "id": 1,
+        "code": "V1",
+        "title": "Yashirin Tizim Ma'lumotlari Oqishi",
+        "points": 100,
+        "difficulty": "Oson"
+      },
+      {
+        "id": 2,
+        "code": "V2",
+        "title": "Xodimlar Pochtalarini Sanash",
+        "points": 150,
+        "difficulty": "Oson"
+      }
     ],
     "participants": [
       {
-        "id": 1,
-        "full_name": "Ali Valiyev",
-        "username": "alivaliyev",
+        "id": 14,
+        "full_name": "Rustam Karimov",
+        "username": "rustam_sec",
         "current_stage": 2,
-        "total_score": 450,
-        "stage1_solved": false,
-        "stage1_count": 3,
+        "total_score": 750,
+        "stage1_count": 5,
         "stage1_total": 7,
-        "stage2_score": 300,
+        "stage1_solved": false,
+        "stage2_score": 500,
         "stage3_unlocked": false,
         "report_submitted": false,
         "report_score": 0,
         "matrix": [
-          { "code": "V1", "points": 100, "solved": true, "solved_at": "2026-11-07 14:20:11" },
-          { "code": "V2", "points": 150, "solved": false, "solved_at": null }
+          {
+            "code": "V1",
+            "points": 100,
+            "solved": true,
+            "solved_at": "2026-11-07 14:32:05"
+          },
+          {
+            "code": "V2",
+            "points": 150,
+            "solved": false,
+            "solved_at": null
+          }
         ]
       }
     ],
     "feed": [
       {
-        "id": 101,
+        "id": 89,
+        "participant_name": "Rustam Karimov",
         "event_type": "solve",
-        "message": "🔥 Ali Valiyev [V1: Information Disclosure] zaifligini fosh qildi! (+100 ball)",
-        "created_at": "2026-11-07 14:20:11"
+        "message": "🔥 Rustam Karimov [V1: Yashirin Tizim Ma'lumotlari Oqishi] zaifligini fosh qildi! (+100 ball)",
+        "created_at": "2026-11-07 14:32:05"
       },
       {
-        "id": 100,
+        "id": 88,
+        "participant_name": "Rustam Karimov",
         "event_type": "join",
-        "message": "👋 Ali Valiyev arena safiga qo'shildi!",
-        "created_at": "2026-11-07 14:00:00"
+        "message": "👋 Rustam Karimov arena safiga qo'shildi!",
+        "created_at": "2026-11-07 14:00:12"
       }
     ]
   }
   ```
+  *(Diqqat: Tokenlar hech qachon ushbu ochiq JSON da chiqmaydi).*
 
 ---
 
-### 5. Real-Vaqt SSE Stream: `GET /api/live/stream`
-* **Mimetype:** `text/event-stream`
-* Matritsa sahifasi ushbu manzilga JavaScript `EventSource` orqali ulanadi:
+### 6.5. Real-Vaqt SSE Jonli Oqim: `GET /api/live/stream`
+* **URL:** `/api/live/stream`
+* **Method:** `GET`
+* **Response Headers:**
+  - `Content-Type: text/event-stream`
+  - `Cache-Control: no-cache`
+  - `Connection: keep-alive`
+  - `X-Accel-Buffering: no`
+* **Stream Wire Format:**
+  ```
+  data: {"challenges": [...], "participants": [...], "feed": [...], "stage3_threshold": 1200, "total_challenges": 10}
+
+  data: {"challenges": [...], "participants": [...], "feed": [...], "stage3_threshold": 1200, "total_challenges": 10}
+  ```
+* **JavaScript ulanish namunasi:**
   ```javascript
   const evtSource = new EventSource('/api/live/stream');
   evtSource.onmessage = function(event) {
-      const data = JSON.parse(event.data);
-      renderMatrix(data); // Har safar o'zgarish bo'lganda ekran darhol yangilanadi!
+      try {
+          const matrixData = JSON.parse(event.data);
+          updateMatrixUI(matrixData);
+      } catch (err) {
+          console.error("SSE parse xatosi:", err);
+      }
+  };
+  evtSource.onerror = function() {
+      console.warn("SSE aloqasi uzildi, qayta ulanilmoqda...");
   };
   ```
 
 ---
 
-### 6. Admin API Endpointlari (Faqat Admin uchun)
-* `POST /admin/api/grade-report`:
-  - Body: `participant_id`, `score` (0..1000), `feedback` (matn)
-* `POST /admin/api/reset-participant`:
-  - Body: `participant_id`
-* `POST /admin/api/add-participant`:
-  - Body: `username`, `full_name`, `phone`
-* `GET /admin/export/excel`:
-  - Excel faylini avtomatik generatsiya qilib yuklab beradi (`.xlsx`).
-* `GET /admin/report/download/<participant_id>`:
-  - Talabaning yuklagan hisobot faylini yuklab olish.
+### 6.6. 3-Bosqich Hisobot Yuklash: `POST /portal/upload_report`
+* **URL:** `/portal/upload_report`
+* **Method:** `POST`
+* **Content-Type:** `multipart/form-data`
+* **Payload:**
+  - `report`: Fayl ob'ekti (`.pdf`, `.docx`, `.doc`, `.zip`). Hajmi: maks 50MB.
+* **Muvaffaqiyatli javob:** Status 302 Redirect `/portal`.
 
 ---
 
-## 7. DIZAYN TIZIMI VA ESTETIKA (CYBERPUNK / SOC AESTHETICS)
+### 6.7. Admin Boshqaruv API lari (Faqat Admin Sessiyasi Uchun)
 
-Eski dizayn "g'alati" ko'ringanining sababi — kiberxavfsizlik ruhidagi zamonaviy premium estetika yetishmaganida edi. Yangi frontend **quyidagi dizayn tamoyillariga** asoslanishi shart:
+#### A. Hisobotni Baholash: `POST /admin/api/grade-report`
+* **Request:** `participant_id=14&score=850&feedback=Ajoyib+hisobot,+zaifliklar+toliq+tahlil+qilingan.`
+* **Response (JSON):**
+  ```json
+  {
+    "status": "success",
+    "message": "Baho muvaffaqiyatli saqlandi!",
+    "new_total": 1600
+  }
+  ```
 
-### 1. Ranglar Palitrasi (Color Palette):
-* **Background Dark:** `#070a13` (Chuqur kosmik obsidian)
-* **Surface / Cards:** `rgba(15, 23, 42, 0.75)` (Glassmorphism, orqa fon blur: `backdrop-filter: blur(12px)`)
-* **Neon Cyan (Birlamchi brend rangi):** `#00e5ff` (Aksentlar, ramkalar, faol elementlar)
-* **Neon Emerald (Yechilgan flaglar):** `#00ff88` (Muvaffaqiyat, ballar)
-* **Warning Amber (Kutilayotgan holatlar):** `#ffb700` (Hisobot kutilyapti, o'rta qiyinlik)
-* **Critical Crimson (Qulflangan / Xato):** `#ff3366` (Xatolar, yuqori xavf darajasi)
-* **Text Primary:** `#ffffff`
-* **Text Muted:** `#94a3b8`
+#### B. Ishtirokchi Natijalarini Qayta Nolga Tushirish: `POST /admin/api/reset-participant`
+* **Request:** `participant_id=14`
+* **Response (JSON):**
+  ```json
+  {
+    "status": "success",
+    "message": "Ishtirokchi natijalari to'liq qayta nollandi!"
+  }
+  ```
 
-### 2. Shriftlar (Typography):
-* **Sarlavhalar va Ko'rsatkichlar:** `Orbitron`, `Chakra Petch`, yoki zamonaviy `Plus Jakarta Sans` / `Inter` (Font-weight: 700 / 800)
-* **Kodlar, Flaglar va Tokenlar:** `JetBrains Mono` yoki `Fira Code` (Monospace, har doim aniq va nusxalash oson bo'lishi kerak).
-
-### 3. Vizual Effektlar va Mikro-animatsiyalar:
-* **Glow & Border:** Kartochkalarda ingichka neon chegaralar (`1px solid rgba(0, 229, 255, 0.2)`) va hover bo'lganda mayin nurlanish (`box-shadow: 0 0 20px rgba(0, 229, 255, 0.25)`).
-* **Matritsa Katakchalari:** Yechilgan katakchalar shunchaki yashil emas, ichida chiroyli belgi (masalan yashil galochka yoki qalqon) va ball yozuvi bilan animatsiyalangan bo'lishi kerak.
-* **Token Banneri:** Talaba portalidagi Shaxsiy Token alohida ko'rkam "Security Badge / Hardware Key" shaklida yaratilib, uning yonida "Nusxalash" (Copy) tugmasi va nusxalanganda "Nusxalandi!" bildirishnomasi bo'lishi kerak.
-* **Toast Bildirishnomalari:** Flag topshirilganda sahifa qayta yuklanmasdan, ekranning tepa-o'ng burchagida zamonaviy cyberpunk uslubidagi bildirishnoma (Toast) paydo bo'lishi va balga qo'shilishi kerak.
-
----
-
-## 8. XAVFSIZLIK VA YASHIRINLIK QOIDALARI
-
-Frontend ishlab chiqishda quyidagi 3 ta xavfsizlik qoidasiga **qat'iy rioya qilinishi shart**:
-
-1. **Token Hech Qachon Ommaga Chiqmasligi Shart:**
-   - Shaxsiy token faqat va faqat o'sha talabaning o'z portalida (`/portal`) ko'rinadi.
-   - Katta ekran matritsasida (`/matrix`) yoki umumiy API javoblarida tokenlar ko'rsatilmaydi yoki yuborilmaydi!
-2. **Stealth Admin Yashirinligi:**
-   - Saytda `/admin` havolasi yoki "Admin panelga o'tish" degan tugma bo'lmasligi kerak.
-   - Faqat bosh sahifadagi kirish formasi orqali `wow` / `centerlar000` kiritilgandagina adminlik faollashadi. Begona foydalanuvchiga `/admin` sahifasi standart 404 xatosini berishi shart.
-3. **Plagiarizmdan Himoya:**
-   - Ishtirokchilar bir-birining flaglarini ko'ra olmasligi uchun har bir flag faqat token asosida hisoblanadi. Frontendda barcha flag topshirish formasi xavfsiz CSRF va JSON tekshiruvidan o'tadi.
+#### C. Natijalarni Excelga Eksport: `GET /admin/export/excel`
+* **Javob:** `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (.xlsx fayl oqimi).
 
 ---
 
-## 9. XULOSA VA KEYINGI QADAM (FRONTEND AGENTI UCHUN)
+## 7. DIZAYN TIZIMI (DESIGN TOKENS, CSS & TAILWIND CONFIG)
 
-Yangi frontend agenti ushbu hujjatni o'qib, mavjud `dashboard/templates` va `dashboard/static` papkalarini zamonaviy, toza, responsiv (mobil va planshetlarga ham mos) hamda haqiqiy kiberxavfsizlik musobaqasiga munosib darajada qayta yaratishi mumkin.
+Yangi Frontend yuqori darajadagi zamonaviy **Cyberpunk / SOC Command Center** uslubida bo'lishi uchun quyidagi dizayn tokenlaridan foydalanadi:
 
-Barcha backend logikasi, sessiyalar, SSE oqimlari va API endpointlari yuqoridagi spetsifikatsiyaga mos ravishda to'liq tayyor va ishchi holatda! 🚀
+### 7.1. CSS Maxsus O'zgaruvchilar (CSS Variables - `:root`):
+```css
+:root {
+  /* Asosiy Fon Ranglari */
+  --bg-space: #070a13;
+  --bg-surface: #0d121f;
+  --bg-card: rgba(15, 23, 42, 0.75);
+  --bg-card-hover: rgba(22, 34, 61, 0.85);
+
+  /* Neon Aksent Ranglar */
+  --neon-cyan: #00e5ff;
+  --neon-cyan-glow: rgba(0, 229, 255, 0.35);
+  --neon-emerald: #00ff88;
+  --neon-emerald-glow: rgba(0, 255, 136, 0.35);
+  --neon-amber: #ffb700;
+  --neon-amber-glow: rgba(255, 183, 0, 0.35);
+  --neon-crimson: #ff3366;
+  --neon-crimson-glow: rgba(255, 51, 102, 0.35);
+  --neon-purple: #a855f7;
+
+  /* Matn Ranglari */
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  /* Ramkalar va Nurlanishlar */
+  --border-glass: 1px solid rgba(255, 255, 255, 0.08);
+  --border-neon: 1px solid rgba(0, 229, 255, 0.3);
+  --glow-cyan: 0 0 20px rgba(0, 229, 255, 0.25);
+  --glow-emerald: 0 0 20px rgba(0, 255, 136, 0.25);
+
+  /* Shriftlar */
+  --font-display: 'Orbitron', 'Chakra Petch', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Glassmorphism filtri */
+  --backdrop-blur: blur(14px);
+}
+```
+
+### 7.2. TailwindCSS Konfiguratsiyasi (`tailwind.config.js`):
+```javascript
+module.exports = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        cyber: {
+          bg: '#070a13',
+          surface: '#0d121f',
+          card: '#0f172a',
+          cyan: '#00e5ff',
+          emerald: '#00ff88',
+          amber: '#ffb700',
+          crimson: '#ff3366',
+          purple: '#a855f7',
+        }
+      },
+      fontFamily: {
+        display: ['Orbitron', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      boxShadow: {
+        'neon-cyan': '0 0 25px rgba(0, 229, 255, 0.3)',
+        'neon-emerald': '0 0 25px rgba(0, 255, 136, 0.3)',
+      }
+    }
+  }
+}
+```
+
+### 7.3. UI Elementlari Holatlari (UI State Matrix):
+* **Topshiriq Kartasi (Unsolved):** Fon: `rgba(15, 23, 42, 0.7)`, Ramka: `1px solid rgba(255, 255, 255, 0.08)`. Input ochiq, kulrang qulf ikonasi.
+* **Topshiriq Kartasi (Solved):** Fon: `rgba(0, 255, 136, 0.08)`, Ramka: `1px solid rgba(0, 255, 136, 0.4)`. Yashil galochka, "Yechildi! (+X ball)" nurlanishi.
+* **Matritsa Katakchasi (Cell):** 
+  - Yechilmagan: `42px x 42px`, to'q ko'k/qora, kichik qulf ikonasi.
+  - Yechilgan: `42px x 42px`, zumrad yashil, ichida oq checkmark, mayin pulsatsiya animatsiyasi (`animation: pulse 2s infinite`).
+
+---
+
+## 8. XAVFSIZLIK, STEALTH ADMIN VA SSE JONLI OQIM QOIDALARI
+
+1. **Token Maxfiyligi:**
+   - Shaxsiy token faqat `/portal` sahifasida va faqat o'sha talabaning o'ziga ko'rsatiladi.
+   - Matritsada (`/matrix`), jonli xabarlarda (`feed`), yoki ochiq API larda token chiqishi qat'iyan taqiqlanadi!
+2. **Stealth Admin Himoyasi:**
+   - Saytda hech qayerda `/admin` tugmasi yoki ssilka bo'lmaydi.
+   - Bosh sahifa login formasida maxsus kombinatsiya kiritilgandagina adminlik faollashadi.
+   - Tizimga kirmagan har qanday shaxs `/admin` sahifasiga to'g'ridan-to'g'ri murojaat qilganda `404 Not Found` standart sahifasi qaytadi.
+3. **Plagiarizmga Qarshi:**
+   - Flag topshirish faqat POST orqali qabul qilinadi. Har bir so'rov orqali ishtirokchining IP manzili va urinishlar soni log qilinadi.
+
+---
+
+## 9. XULOSA: YANGI AGENT UCHUN ANIQ KO'RSATMA
+
+Ushbu spetsifikatsiya asosida yangi Frontend agenti:
+1. `dashboard/templates/index.html` (Kirish, Ro'yxatdan o'tish, Stealth Admin xabi)
+2. `dashboard/templates/portal.html` (Talaba kabineti, token nusxalash, topshiriqlar kartalari, AJAX submit, hisobot yuklash)
+3. `dashboard/templates/matrix.html` (Projektor jonli matritsasi, SSE stream, fullscreen, yuguruvchi satr)
+4. `dashboard/templates/admin.html` (Hakamlar boshqaruvi, baholash modali, Excel eksport)
+5. `stage2_web/app/templates/*` (Korporativ target sayt ko'rinishini modernizatsiya qilish, forma parametrlarini saqlab qolgan holda)
+
+fayllarini zamonaviy, responsiv va to'liq integratsiya qilingan holatda yaratishi mumkin. Barcha backend API lari ushbu hujjatdagi shartnomalar bilan 100% mos va ishchi holatda! 🚀

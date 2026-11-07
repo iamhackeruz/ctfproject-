@@ -165,11 +165,11 @@ def register_participant(username: str, full_name: str, password: Optional[str] 
     """, (username.strip(), full_name.strip(), user_token, p_hash, phone, telegram_id, ssh_password))
     participant_id = cur.lastrowid
 
-    # Activity feed
+    # Activity feed (xavfsizlik uchun Token matritsada ko'rsatilmaydi)
     cur.execute("""
         INSERT INTO activity_feed (participant_id, participant_name, event_type, message)
         VALUES (?, ?, 'join', ?)
-    """, (participant_id, full_name.strip(), f"👋 {full_name.strip()} arena safiga qo'shildi! (Token: {user_token})"))
+    """, (participant_id, full_name.strip(), f"👋 {full_name.strip()} arena safiga qo'shildi!"))
 
     conn.commit()
     cur.execute("SELECT * FROM participants WHERE id = ?", (participant_id,))
@@ -558,7 +558,6 @@ def get_live_matrix_data() -> Dict[str, Any]:
             "id": pid,
             "username": p["username"],
             "full_name": p["full_name"],
-            "token": p["token"],
             "current_stage": p["current_stage"],
             "stage1_solved": bool(p["stage1_solved"]),
             "stage1_count": s1_count,

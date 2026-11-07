@@ -36,9 +36,18 @@ def setup_stage1(username: str = None, token: str = "APEX-DEFAULT", home_dir: st
     l6_flag = flag_engine.get_flag(token, "L6")
     l7_flag = flag_engine.get_flag(token, "L7")
 
-    # Eski papkani tozalash
+    # Eski papkani tozalash (chmod 000 yoki ruxsatlarni hisobga olgan holda)
     if os.path.exists(corp_dir):
-        shutil.rmtree(corp_dir, ignore_errors=True)
+        def _on_rm_error(func, path, exc_info):
+            try:
+                os.chmod(path, 0o777)
+                func(path)
+            except Exception:
+                pass
+        try:
+            shutil.rmtree(corp_dir, onerror=_on_rm_error)
+        except Exception:
+            shutil.rmtree(corp_dir, ignore_errors=True)
 
     for sub in ["01_hidden_station", "02_system_logs", "03_employee_registry",
                 "04_lost_backups", "05_restricted_vault", "06_archived_backups", "07_git_repository"]:

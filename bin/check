@@ -1,70 +1,116 @@
 #!/usr/bin/env python3
 """
-bin/check — CTF v2 Flag tekshirish buyrug'i
-Terminal orqali ishlatish:
-  check
+bin/check — CTF v2 Flag Tekshirish va Yuborish Utilitasi
+Terminal orqali:
   check FLAG{...}
 """
 
 import sys
 import os
+import json
+import urllib.request
+import urllib.error
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 sys.path.insert(0, PROJECT_ROOT)
 
-from core_db import db as ctf_db
+from core_db import flag_engine
+
+CYAN = "\033[1;36m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+RED = "\033[1;31m"
+RESET = "\033[0m"
+
+
+def get_token() -> str:
+    paths = [
+        "/var/ctf/active_token.txt",
+        os.path.join(PROJECT_ROOT, ".apex_token"),
+        os.path.expanduser("~/.apex_token")
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    tok = f.read().strip()
+                    if tok:
+                        return tok
+            except Exception:
+                pass
+    return "APEX-DEFAULT"
+
+
+def get_server_url() -> str:
+    env_url = os.environ.get("CTF_SERVER_URL")
+    if env_url:
+        return env_url.rstrip("/")
+
+    url_file = "/var/ctf/server_url.txt"
+    if os.path.exists(url_file):
+        try:
+            with open(url_file, "r") as f:
+                u = f.read().strip()
+                if u:
+                    return u.rstrip("/")
+        except Exception:
+            pass
+    return ""
+
 
 def main():
-    username = os.environ.get("SUDO_USER") or os.environ.get("USER") or "talaba1"
-    participant = ctf_db.get_participant_by_user(username)
-
-    if not participant:
-        # Avtomatik ro'yxatdan o'tkazish
-        participant = ctf_db.register_participant(username, username.capitalize())
-
-    flag = ""
-    if len(sys.argv) > 1:
-        flag = sys.argv[1].strip()
-    else:
-        # flag.txt dan o'qish
-        home_dir = f"/home/{username}"
-        paths = [
-            os.path.join(home_dir, "flag.txt"),
-            os.path.join(home_dir, "apex_corp", "flag.txt")
-        ]
-        for p in paths:
-            if os.path.exists(p):
-                with open(p, "r") as f:
-                    flag = f.read().strip()
-                break
-
-    if not flag:
-        print("\n⚠️  Flag topilmadi!")
-        print("Foydalanish:")
-        print("  check FLAG{...}")
-        print("  echo \"FLAG{...}\" > ~/flag.txt && check\n")
+    if len(sys.argv) < 2:
+        print(f"\n{YELLOW}⚠️  Foydalanish:{RESET}")
+        print(f"  {CYAN}check FLAG{{...}}{RESET}\n")
         sys.exit(1)
 
-    print("====================================================================")
-    print(f"  🚩 CTF v2 FLAGNI TEKSHIRISH — Foydalanuvchi: {username}")
-    print("====================================================================")
+    flag = sys.argv[1].strip()
+    token = get_token()
 
-    # 1. 1-bosqich (Linux) flagi sifatida tekshirib ko'rish
-    ok1, msg1 = ctf_db.submit_stage1_flag(username, flag)
-    if ok1:
-        print(f"\n{msg1}\n")
-        sys.exit(0)
+    print(f"\n{CYAN}================================================================================{RESET}")
+    print(f"{GREEN}  🚩 APEX CORP CTF — FLAG TEKSHIRUVCHI{RESET}")
+    print(f"  🔑 Faol Token: {YELLOW}{token}{RESET}")
+    print(f"{CYAN}================================================================================{RESET}")
 
-    # 2. 2-bosqich (Web Pentest) flagi sifatida tekshirib ko'rish
-    ok2, msg2, details = ctf_db.submit_stage2_flag(participant["id"], flag)
-    if ok2:
-        print(f"\n🎉 {msg2}\n")
-        sys.exit(0)
+    matched_code = flag_engine.verify_submitted_flag(token, flag)
 
-    # Noto'g'ri flag
-    print(f"\n❌ {msg1}\n")
-    sys.exit(1)
+    if not matched_code:
+        print(f"\n{RED}❌ Noto'g'ri flag!{RESET}")
+        print("Ushbu flag sizning shaxsiy laboratoriya tokeningizga mos kelmadi.")
+        print("Iltimos, qaytadan urinib ko'ring yoki laboratoriyangiz to'g'ri sozlanganini tekshiring.\n")
+        sys.exit(1)
+
+    info = flag_engine.CHALLENGES[matched_code]
+    print(f"\n{GREEN}✅ TABRIKLAYMIZ! FLAG TO'G'RI!{RESET}")
+    print(f"  📌 Topshiriq:  {CYAN}[{matched_code}] {info['title']}{RESET}")
+    print(f"  🏆 Ball:       {YELLOW}+{info['points']} ball{RESET}")
+
+    # Markaziy serverga yuborishga urinish
+    server_url = get_server_url()
+    if server_url:
+        try:
+            api_endpoint = f"{server_url}/api/submit_flag"
+            payload = json.dumps({"token": token, "flag": flag}).encode("utf-8")
+            req = urllib.request.Request(
+                api_endpoint,
+                data=payload,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if data.get("success"):
+                    print(f"\n{GREEN}🚀 Natijangiz markaziy serverga muvaffaqiyatli uzatildi! Live Matrix yangilandi.{RESET}")
+                else:
+                    print(f"\n{YELLOW}Server javobi: {data.get('message')}{RESET}")
+        except Exception as e:
+            print(f"\n{YELLOW}ℹ️  Markaziy server bilan to'g'ridan-to'g'ri aloqa o'rnatilmadi: {e}{RESET}")
+            print(f"Iltimos, ushbu flagni brauzeringiz orqali markaziy saytdagi shaxsiy kabinetga kiriting!")
+    else:
+        print(f"\n{YELLOW}👉 Ushbu flagni markaziy veb-saytdagi shaxsiy kabinetingizga (Portal) kiriting!{RESET}")
+
+    print(f"{CYAN}================================================================================{RESET}\n")
+
 
 if __name__ == "__main__":
     main()

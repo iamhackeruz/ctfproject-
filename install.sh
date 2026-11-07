@@ -28,13 +28,14 @@ print('   ✅ Baza tayyor: $CTF_DB_PATH')
 "
 chmod 666 "$CTF_DB_PATH"* 2>/dev/null || true
 
-# 3. Terminal buyruqlarini ulash (check va status)
+# 3. Terminal buyruqlarini ulash (check, status va apex-init)
 echo "[3/4] /usr/local/bin/ ga buyruqlar ulanmoqda..."
 if [ -w /usr/local/bin ]; then
     ln -sf "$SCRIPT_DIR/bin/check" /usr/local/bin/check
     ln -sf "$SCRIPT_DIR/bin/status" /usr/local/bin/status
-    chmod +x /usr/local/bin/check /usr/local/bin/status
-    echo "   ✅ /usr/local/bin/check va status muvaffaqiyatli ulandi"
+    ln -sf "$SCRIPT_DIR/bin/apex-init" /usr/local/bin/apex-init
+    chmod +x /usr/local/bin/check /usr/local/bin/status /usr/local/bin/apex-init
+    echo "   ✅ /usr/local/bin/check, status va apex-init muvaffaqiyatli ulandi"
 else
     echo "   [i] Sudo huquqi yo'q, buyruqlar $SCRIPT_DIR/bin da qoldi."
 fi

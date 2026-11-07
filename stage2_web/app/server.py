@@ -25,7 +25,34 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(CURRENT_DIR))
 sys.path.insert(0, PROJECT_ROOT)
 
 from core_db import db as ctf_db
+from core_db import flag_engine
 from stage2_web.app.db_init import init_apex_db, DB_PATH as APEX_DB_PATH
+
+def get_active_token() -> str:
+    """Aktiv ishtirokchi tokenini aniqlash."""
+    token_file = os.getenv("APEX_TOKEN_FILE", "/var/ctf/active_token.txt")
+    if os.path.exists(token_file):
+        try:
+            with open(token_file, "r") as f:
+                t = f.read().strip()
+                if t:
+                    return t
+        except Exception:
+            pass
+    local_f = os.path.join(PROJECT_ROOT, ".apex_token")
+    if os.path.exists(local_f):
+        try:
+            with open(local_f, "r") as f:
+                t = f.read().strip()
+                if t:
+                    return t
+        except Exception:
+            pass
+    return os.getenv("APEX_TOKEN", "APEX-DEFAULT")
+
+def get_challenge_flag(code: str) -> str:
+    tok = get_active_token()
+    return flag_engine.get_flag(tok, code)
 
 app = Flask(__name__,
             static_folder=os.path.join(CURRENT_DIR, "static"),
@@ -151,7 +178,7 @@ def user_enum():
             "exists": True
         }), 401)
         resp.headers["X-User-Status"] = "Account Found"
-        resp.headers["X-Sec-Flag"] = "FLAG{v2_user_enum_apex_sec_83b1}"
+        resp.headers["X-Sec-Flag"] = get_challenge_flag("V2")
         return resp
     else:
         resp = make_response(jsonify({
@@ -238,7 +265,7 @@ def staff_dashboard():
     user = conn.execute("SELECT * FROM employees WHERE id = ?", (payload["sub"],)).fetchone()
     conn.close()
 
-    flag_v3 = "FLAG{v2_auth_bypass_headers_77c2}"
+    flag_v3 = get_challenge_flag("V3")
     return render_template("staff_dashboard.html", user=user, payload=payload, flag_v3=flag_v3)
 
 # ==============================================================================
@@ -289,7 +316,7 @@ def support_ticket():
             xss_alert = (
                 "⚠️ [SECURITY ALERT]: Xavfsizlik bo'limi tizimida script/payload aniqlandi! "
                 "Administrator brauzerida sessiya kuki fosh etildi: "
-                "admin_auth_cookie=FLAG{v2_stored_xss_cookie_theft_55e5}; HttpOnly=False; Domain=apextech.com"
+                f"admin_auth_cookie={get_challenge_flag('V5')}; HttpOnly=False; Domain=apextech.com"
             )
             admin_reply = "⚠️ [XAVFSIZLIK TEKSHIRUVI]: Administrator murojaatni ko'rib chiqdi."
         else:
@@ -421,7 +448,7 @@ def upload_resume():
         if is_bypass:
             if has_webshell_code:
                 return render_template("careers.html",
-                                       success=f"Fayl '{filename}' serverga yuklandi va tahlildan o'tkazildi! Webshell filtri muvaffaqiyatli aylanib o'tildi: FLAG{{v2_fileupload_bypass_webshell_22h8}}")
+                                       success=f"Fayl '{filename}' serverga yuklandi va tahlildan o'tkazildi! Webshell filtri muvaffaqiyatli aylanib o'tildi: {get_challenge_flag('V8')}")
             else:
                 return render_template("careers.html",
                                        error="Fayl formati qabul qilindi, ammo uning ichida hech qanday buyruq/webshell kodi aniqlanmadi."), 400
@@ -446,7 +473,7 @@ def executive_board():
     if role not in ["superadmin", "director", "admin"]:
         return render_template("admin_forbidden.html", role=role), 403
 
-    flag_v9 = "FLAG{v2_priv_esc_jwt_admin_takeover_11i9}"
+    flag_v9 = get_challenge_flag("V9")
     return render_template("admin_board.html", payload=payload, flag_v9=flag_v9)
 
 # ==============================================================================

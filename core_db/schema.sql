@@ -10,20 +10,22 @@ CREATE TABLE IF NOT EXISTS participants (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     username          TEXT UNIQUE NOT NULL,
     full_name         TEXT NOT NULL,
+    token             TEXT UNIQUE NOT NULL, -- Shaxsiy identifikatsiya kodi (masalan: APEX-7F92)
+    password_hash     TEXT,
     phone             TEXT,
     telegram_id       INTEGER UNIQUE,
     ssh_password      TEXT,
-    current_stage     INTEGER DEFAULT 1, -- 1: Linux CTF, 2: Web Pentest, 3: Reporting, 4: Finished
+    current_stage     INTEGER DEFAULT 1,    -- 1: Linux CTF, 2: Web Pentest, 3: Reporting, 4: Finished
     stage1_solved     INTEGER DEFAULT 0,
     stage1_flag       TEXT,
     stage1_time       DATETIME,
     stage2_score      INTEGER DEFAULT 0,
-    stage3_unlocked   INTEGER DEFAULT 0, -- 1 bo'lganda Reporting ochiladi (score >= 1200)
-    report_file       TEXT,              -- Yuklangan hisobot fayli (PDF/DOCX)
+    stage3_unlocked   INTEGER DEFAULT 0,    -- 1 bo'lganda Reporting ochiladi (score >= 1200)
+    report_file       TEXT,                 -- Yuklangan hisobot fayli (PDF/DOCX)
     report_submitted_at DATETIME,
-    report_score      INTEGER DEFAULT 0, -- Hakamlar qo'ygan ball (0-1000)
-    report_feedback   TEXT,              -- Hakamlar izohi
-    report_read       INTEGER DEFAULT 0, -- Admin tomonidan o'qilganlik holati (0: o'qilmagan, 1: o'qilgan)
+    report_score      INTEGER DEFAULT 0,    -- Hakamlar qo'ygan ball (0-1000)
+    report_feedback   TEXT,                 -- Hakamlar izohi
+    report_read       INTEGER DEFAULT 0,    -- Admin tomonidan o'qilganlik holati (0: o'qilmagan, 1: o'qilgan)
     total_score       INTEGER DEFAULT 0,
     created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
     last_seen         DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -53,7 +55,7 @@ CREATE TABLE IF NOT EXISTS challenges (
     description   TEXT
 );
 
--- Topshirilgan flaglar (muvaffaqiyatli solves)
+-- Topshirilgan Web flaglar (muvaffaqiyatli solves)
 CREATE TABLE IF NOT EXISTS solves (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     participant_id INTEGER NOT NULL,
@@ -83,25 +85,26 @@ CREATE TABLE IF NOT EXISTS activity_feed (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     participant_id   INTEGER,
     participant_name TEXT NOT NULL,
-    event_type       TEXT NOT NULL, -- solve, stage_unlock, report_submit, lead_change
+    event_type       TEXT NOT NULL, -- solve, stage_unlock, report_submit, lead_change, join
     message          TEXT NOT NULL,
     created_at       DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Boshlang'ich 10 ta Web zaiflikni kiritish
 INSERT OR IGNORE INTO challenges (id, code, title, vuln_type, difficulty, points, flag_pattern, description) VALUES
-(1,  'V1',  'Yashirin Tizim Ma''lumotlari Oqishi', 'Information Disclosure', 'Oson',   100, 'FLAG{v2_infoleak_git_exposed_91a2}',     'Ochiq .git katalogi yoki yashirin API endpoint orqali ma''lumot oshkor bo''lishi'),
-(2,  'V2',  'Xodimlar Pochtalarini Sanash',         'User Enumeration',       'Oson',   150, 'FLAG{v2_user_enum_apex_sec_83b1}',      'Login yoki parol tiklash sahifasida xatolik xabarlari orqali xodimlarni aniqlash'),
-(3,  'V3',  'Autentifikatsiya Cheklovini Buzish',  'Rate-Limit Bypass',      'O''rta',  200, 'FLAG{v2_auth_bypass_headers_77c2}',     'X-Forwarded-For orqali cheklovni aylanib o''tib xodim hisobiga kirish'),
-(4,  'V4',  'Xodim Maxfiy Shartnomasini O''qish',  'IDOR',                   'O''rta',  250, 'FLAG{v2_idor_confidential_contract_66d4}', 'ID parametrini o''zgartirib direktor profili va shartnomasini tortib olish'),
-(5,  'V5',  'Mijozlar Chatida Cookie O''g''irlash',  'Stored XSS',             'O''rta',  250, 'FLAG{v2_stored_xss_cookie_theft_55e5}',  'Izohlar formasiga XSS payload kiritib administrator sesiyasini qo''lga kiritish'),
-(6,  'V6',  'Server Konfiguratsiya Faylini O''qish', 'LFI / Path Traversal',   'Qiyin',  300, 'FLAG{v2_lfi_path_traversal_master_44f6}', 'Hujjat yuklab olish parametri orqali server ichki .env.vault faylini o''qish'),
-(7,  'V7',  'Maxfiy Ombor Ma''lumotlarini Olish',   'SQL Injection (UNION)',  'Qiyin',  350, 'FLAG{v2_sqli_union_secret_extract_33g7}', 'Qidiruv parametrida SQLi orqali maxfiy jadvallarni o''qib olish'),
-(8,  'V8',  'Filtrni Buzib Webshell Yuklash',      'File Upload Bypass',     'Qiyin',  400, 'FLAG{v2_fileupload_bypass_webshell_22h8}', 'Fayl tekshiruvini chetlab o''tib webshell yuklash va buyruq bajarish'),
-(9,  'V9',  'Boshqaruv Kengashini Egallash',        'Privilege Escalation',   'Kritik', 500, 'FLAG{v2_priv_esc_jwt_admin_takeover_11i9}', 'JWT tokenni manipulyatsiya qilib Superadmin panelini to''liq qo''lga kiritish'),
-(10, 'V10', 'Bosh Serverni Masofadan Buzish (RCE)', 'Remote Code Execution',   'Kritik', 500, 'FLAG{v2_rce_apex_vault_breach_00j0}',     'Tarmoq diagnostika utilitasida buyruq inyeksiyasi orqali Markaziy Kassa (Vault) flagini olish');
+(1,  'V1',  'Yashirin Tizim Ma''lumotlari Oqishi', 'Information Disclosure', 'Oson',   100, 'FLAG{v2_infoleak_git_exposed}',     'Ochiq .git katalogi orqali commit tarixidagi maxfiy flagni fosh qiling'),
+(2,  'V2',  'Xodimlar Pochtalarini Sanash',         'User Enumeration',       'Oson',   150, 'FLAG{v2_user_enum_apex_sec}',      'Login sahifasida xatolik sarlavhalari orqali xodimlarni aniqlash'),
+(3,  'V3',  'Autentifikatsiya Cheklovini Buzish',  'Rate-Limit Bypass',      'O''rta',  200, 'FLAG{v2_auth_bypass_headers}',     'X-Forwarded-For orqali cheklovni aylanib o''tib xodim hisobiga kirish'),
+(4,  'V4',  'Xodim Maxfiy Shartnomasini O''qish',  'IDOR',                   'O''rta',  250, 'FLAG{v2_idor_confidential_contract}', 'ID parametrini o''zgartirib direktor profili va shartnomasini tortib olish'),
+(5,  'V5',  'Mijozlar Chatida Cookie O''g''irlash',  'Stored XSS',             'O''rta',  250, 'FLAG{v2_stored_xss_cookie_theft}',  'Ticket formasiga XSS payload kiritib administrator sesiyasini qo''lga kiritish'),
+(6,  'V6',  'Server Konfiguratsiya Faylini O''qish', 'LFI / Path Traversal',   'Qiyin',  300, 'FLAG{v2_lfi_path_traversal_master}', 'Hujjat yuklab olish parametri orqali server ichki vault/.env.vault faylini o''qish'),
+(7,  'V7',  'Maxfiy Ombor Ma''lumotlarini Olish',   'SQL Injection (UNION)',  'Qiyin',  350, 'FLAG{v2_sqli_union_secret_extract}', 'Qidiruv parametrida SQLi orqali enterprise_secrets jadvalidan flagni olish'),
+(8,  'V8',  'Filtrni Buzib Webshell Yuklash',      'File Upload Bypass',     'Qiyin',  400, 'FLAG{v2_fileupload_bypass_webshell}', 'Fayl tekshiruvini chetlab o''tib webshell yuklash va buyruq bajarish'),
+(9,  'V9',  'Boshqaruv Kengashini Egallash',        'Privilege Escalation',   'Kritik', 500, 'FLAG{v2_priv_esc_jwt_admin_takeover}', 'JWT tokenni manipulyatsiya qilib Superadmin panelini to''liq qo''lga kiritish'),
+(10, 'V10', 'Bosh Serverni Masofadan Buzish (RCE)', 'Remote Code Execution',   'Kritik', 500, 'FLAG{v2_rce_apex_vault_breach}',     'Tarmoq diagnostika utilitasida buyruq inyeksiyasi orqali master_flag.txt flagini olish');
 
 CREATE INDEX IF NOT EXISTS idx_participants_user ON participants(username);
+CREATE INDEX IF NOT EXISTS idx_participants_token ON participants(token);
 CREATE INDEX IF NOT EXISTS idx_participants_stage ON participants(current_stage);
 CREATE INDEX IF NOT EXISTS idx_solves_user ON solves(participant_id);
 CREATE INDEX IF NOT EXISTS idx_activity_time ON activity_feed(created_at);

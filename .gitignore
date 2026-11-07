@@ -10,12 +10,19 @@ venv/
 
 # Environment and sensitive secrets
 .env.local
+.apex_token
 *.log
+*.swp
+*.swo
 
 # Test and coverage artifacts
 .pytest_cache/
 .coverage
 load_test_results.json
+
+# Uploaded student reports
+stage3_reporting/uploads/*
+!stage3_reporting/uploads/.gitkeep
 
 # OS specific
 .DS_Store

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-dashboard/server.py — CTF v2 Katta Ekran (Projektor) Jonli Hujum Matritsasi va Admin Paneli
+dashboard/server.py — CTF v2 Central Server:
+- Katta Ekran (Projektor) Jonli Hujum Matritsasi & Scoreboard
+- Ishtirokchilar Shaxsiy Portali & Token Berish
+- Dinamik Flag Qabul Qilish (API)
+- Admin Boshqaruv Paneli
 Port: 8080 (yoki DASHBOARD_PORT)
 """
 
@@ -10,30 +14,233 @@ import time
 import json
 import sqlite3
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request, Response, send_file
+from werkzeug.utils import secure_filename
+from flask import Flask, render_template, jsonify, request, Response, send_file, session, redirect, url_for
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 sys.path.insert(0, PROJECT_ROOT)
 
 from core_db import db as ctf_db
+from core_db import flag_engine
 from core_db import analytics
 
 app = Flask(__name__,
             static_folder=os.path.join(CURRENT_DIR, "static"),
             template_folder=os.path.join(CURRENT_DIR, "templates"))
-app.config["SECRET_KEY"] = "ctf_dashboard_secret_2026"
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "ctf_apex_corp_session_secret_2026")
+UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, "stage3_reporting", "uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin2026")
+
+
+# ==============================================================================
+# ASOSIY VA MATRITSA SAHIYALARI
+# ==============================================================================
 
 @app.route("/")
 def big_screen_matrix():
     """Katta ekran (Projektor) jonli matritsa ko'rinishi."""
-    return render_template("matrix.html")
+    current_user = None
+    if "user_id" in session:
+        current_user = ctf_db.get_participant_by_id(session["user_id"])
+    return render_template("matrix.html", current_user=current_user)
+
+@app.route("/matrix")
+def matrix_view():
+    return redirect(url_for("big_screen_matrix"))
+
+
+# ==============================================================================
+# ISHTIROKCHILAR AUTENTIFIKATSIYASI VA PORTAL
+# ==============================================================================
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Yangi ishtirokchini ro'yxatdan o'tkazish va unga shaxsiy Token taqdim etish."""
+    if "user_id" in session:
+        return redirect(url_for("portal"))
+
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip().lower()
+        password = request.form.get("password", "").strip()
+        password_confirm = request.form.get("password_confirm", "").strip()
+
+        if not full_name or not username or not password:
+            return render_template("register.html", error="Barcha maydonlar to'ldirilishi shart!")
+
+        if password != password_confirm:
+            return render_template("register.html", error="Kiritilgan parollar mos kelmadi!")
+
+        # Mavjudlikni tekshirish
+        existing = ctf_db.get_participant_by_user(username)
+        if existing:
+            return render_template("register.html", error="Bu username allaqachon ro'yxatdan o'tgan. Boshqa username tanlang.")
+
+        try:
+            participant = ctf_db.register_participant(
+                username=username,
+                full_name=full_name,
+                password=password
+            )
+            session["user_id"] = participant["id"]
+            session["username"] = participant["username"]
+            session["token"] = participant["token"]
+            return redirect(url_for("portal"))
+        except Exception as e:
+            return render_template("register.html", error=f"Ro'yxatdan o'tishda xatolik: {str(e)}")
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Ishtirokchi login sahifasi."""
+    if "user_id" in session:
+        return redirect(url_for("portal"))
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip().lower()
+        password = request.form.get("password", "").strip()
+
+        participant = ctf_db.authenticate_participant(username, password)
+        if participant:
+            session["user_id"] = participant["id"]
+            session["username"] = participant["username"]
+            session["token"] = participant["token"]
+            return redirect(url_for("portal"))
+        else:
+            return render_template("login.html", error="Username yoki parol noto'g'ri!")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    """Tizimdan chiqish."""
+    session.clear()
+    return redirect(url_for("login"))
+
+
+@app.route("/portal")
+def portal():
+    """Ishtirokchining shaxsiy kabineti (Token, Topshiriqlar ro'yxati, Flag topshirish)."""
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    portal_data = ctf_db.get_participant_portal_data(session["user_id"])
+    if not portal_data or not portal_data.get("participant"):
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template("portal.html", **portal_data)
+
+
+@app.route("/portal/upload_report", methods=["POST"])
+def upload_report():
+    """3-bosqich Incident Report faylini yuklash."""
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    if "report" not in request.files:
+        return redirect(url_for("portal"))
+
+    file = request.files["report"]
+    if file.filename == "":
+        return redirect(url_for("portal"))
+
+    filename = secure_filename(file.filename)
+    user_prefix = f"user_{session['user_id']}_{int(time.time())}"
+    save_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{user_prefix}_{filename}")
+    file.save(save_path)
+
+    ok, msg = ctf_db.submit_report(session["user_id"], save_path)
+    return redirect(url_for("portal"))
+
+
+# ==============================================================================
+# DINAMIK FLAG TOPSHIRISH API (AJAX & CLI)
+# ==============================================================================
+
+@app.route("/api/submit_flag", methods=["POST"])
+def api_submit_flag():
+    """
+    Shaxsiy token asosida dinamik flag tekshirish API.
+    Sessiya orqali yoki JSON dagi token orqali tekshiradi.
+    """
+    user_id = session.get("user_id")
+    data = request.get_json(silent=True) or request.form
+
+    flag = data.get("flag", "").strip()
+    if not flag:
+        return jsonify({"success": False, "message": "Flag kiritilmadi!"}), 400
+
+    # Agar sessiya bo'lmasa, tokendan qidirish
+    if not user_id:
+        req_token = data.get("token", "").strip().upper()
+        if req_token:
+            p = ctf_db.get_participant_by_token(req_token)
+            if p:
+                user_id = p["id"]
+
+    if not user_id:
+        return jsonify({"success": False, "message": "Avtorizatsiyadan o'tilmagan. Avval tizimga kiring!"}), 401
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    ok, msg, res_data = ctf_db.submit_flag_dynamic(user_id, flag, client_ip)
+
+    p_updated = ctf_db.get_participant_by_id(user_id)
+    new_total = p_updated["total_score"] if p_updated else 0
+
+    return jsonify({
+        "success": ok,
+        "message": msg,
+        "code": res_data.get("code"),
+        "points": res_data.get("points", 0),
+        "title": res_data.get("title", ""),
+        "new_total_score": new_total
+    })
+
+
+# ==============================================================================
+# LIVE STREAM VA MATRITSA API
+# ==============================================================================
+
+@app.route("/api/live/matrix")
+def api_matrix():
+    """Jonli matritsa ma'lumotlari JSON shaklida."""
+    data = ctf_db.get_live_matrix_data()
+    return jsonify(data)
+
+@app.route("/api/live/stream")
+def sse_stream():
+    """Server-Sent Events (SSE) orqali jonli ma'lumot uzatish."""
+    def event_stream():
+        last_hash = ""
+        while True:
+            try:
+                data = ctf_db.get_live_matrix_data()
+                data_json = json.dumps(data)
+                curr_hash = hash(data_json)
+                if curr_hash != last_hash:
+                    last_hash = curr_hash
+                    yield f"data: {data_json}\n\n"
+            except Exception:
+                pass
+            time.sleep(2)
+
+    return Response(event_stream(), mimetype="text/event-stream")
+
+
+# ==============================================================================
+# ADMIN BOSHQARUV PANEL
+# ==============================================================================
 
 @app.route("/admin")
 def admin_panel():
-    """Hakamlar va o'qituvchilar uchun boshqaruv paneli."""
     auth_pass = request.args.get("key") or request.cookies.get("admin_key")
     is_authenticated = (auth_pass == ADMIN_PASSWORD)
     data = ctf_db.get_live_matrix_data() if is_authenticated else None
@@ -42,7 +249,6 @@ def admin_panel():
 
 @app.route("/admin/export/excel")
 def admin_export_excel():
-    """Barcha ishtirokchilar natijalarini to'liq bitta Excel (.xlsx) fayl qilib yuklab olish."""
     auth_pass = request.args.get("key") or request.cookies.get("admin_key")
     if auth_pass != ADMIN_PASSWORD:
         return "Ruxsat yo'q: Admin paroli talab etiladi", 403
@@ -58,14 +264,12 @@ def admin_export_excel():
 
 @app.route("/admin/api/clean-dummy-users", methods=["POST"])
 def admin_clean_dummy_users():
-    """Eski testlardan qolgan sinov (dummy) foydalanuvchilarini tozalash."""
     key = request.headers.get("X-Admin-Key") or request.form.get("key")
     if key != ADMIN_PASSWORD:
         return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
 
     conn = ctf_db.get_connection()
     cur = conn.cursor()
-    # Dummy foydalanuvchilarni o'chirish (talaba1, talaba2, user kabi haqiqiy akkauntlarga tegilmaydi)
     cur.execute("""
         DELETE FROM participants 
         WHERE username LIKE 'elite_%' 
@@ -79,11 +283,10 @@ def admin_clean_dummy_users():
     conn.commit()
     conn.close()
 
-    return jsonify({"status": "success", "message": f"{deleted_count} ta sinov foydalanuvchisi muvaffaqiyatli tozalandi!"})
+    return jsonify({"status": "success", "message": f"{deleted_count} ta sinov foydalanuvchisi tozalandi!"})
 
 @app.route("/admin/api/reset-participant", methods=["POST"])
 def admin_reset_participant():
-    """Alohida bir ishtirokchini boshidan nollash."""
     key = request.headers.get("X-Admin-Key") or request.form.get("key")
     if key != ADMIN_PASSWORD:
         return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
@@ -114,32 +317,7 @@ def admin_reset_participant():
     conn.commit()
     conn.close()
 
-    return jsonify({"status": "success", "message": f"Ishtirokchi natijalari to'liq qayta nollandi!"})
-
-@app.route("/api/live/matrix")
-def api_matrix():
-    """Jonli matritsa ma'lumotlari JSON shaklida."""
-    data = ctf_db.get_live_matrix_data()
-    return jsonify(data)
-
-@app.route("/api/live/stream")
-def sse_stream():
-    """Server-Sent Events (SSE) orqali sahifani yangilamasdan real-vaqt ma'lumot uzatish."""
-    def event_stream():
-        last_hash = ""
-        while True:
-            try:
-                data = ctf_db.get_live_matrix_data()
-                data_json = json.dumps(data)
-                curr_hash = hash(data_json)
-                if curr_hash != last_hash:
-                    last_hash = curr_hash
-                    yield f"data: {data_json}\n\n"
-            except Exception as e:
-                pass
-            time.sleep(2)  # Har 2 soniyada tekshirish
-
-    return Response(event_stream(), mimetype="text/event-stream")
+    return jsonify({"status": "success", "message": "Ishtirokchi natijalari to'liq qayta nollandi!"})
 
 @app.route("/admin/api/add-participant", methods=["POST"])
 def admin_add_participant():
@@ -174,7 +352,6 @@ def admin_grade_report():
         conn.close()
         return jsonify({"status": "error", "message": "Topilmadi"}), 404
 
-    # Agar avval baholangan bo'lsa, faqat farqini qo'shish/ayirish
     old_report_score = row["report_score"] or 0
     score_diff = score - old_report_score
     new_total = row["total_score"] + score_diff
@@ -200,7 +377,6 @@ def admin_grade_report():
 
 @app.route("/admin/report/preview/<int:participant_id>")
 def preview_report(participant_id):
-    """Admin uchun hisobotni brauzerda 100% xavfsiz ko'rish (Sanitized Text Extractor)."""
     auth_pass = request.args.get("key") or request.cookies.get("admin_key")
     if auth_pass != ADMIN_PASSWORD:
         return jsonify({"error": "Avtorizatsiya talab etiladi"}), 403
@@ -227,7 +403,6 @@ def preview_report(participant_id):
 
 @app.route("/admin/report/download/<int:participant_id>")
 def download_report_file(participant_id):
-    """Hisobot faylini xavfsiz yuklab olish."""
     auth_pass = request.args.get("key") or request.cookies.get("admin_key")
     if auth_pass != ADMIN_PASSWORD:
         return "Ruxsat yo'q", 403
@@ -241,7 +416,8 @@ def download_report_file(participant_id):
 
     return send_file(row["report_file"], as_attachment=True)
 
+
 if __name__ == "__main__":
     port = int(os.getenv("DASHBOARD_PORT", 8080))
-    print(f"[*] CTF v2 Live Matrix Dashboard ishga tushmoqda: http://0.0.0.0:{port}")
+    print(f"[*] CTF v2 Central Server (Portal + Matrix) ishga tushmoqda: http://0.0.0.0:{port}")
     app.run(host="0.0.0.0", port=port, debug=False)

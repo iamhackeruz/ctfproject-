@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""
+bin/apex-init — Apex Corp CTF Laboratoriyasini Shaxsiy Token Bilan Faollashtirish
+Har bir ishtirokchi o'ziga berilgan shaxsiy tokenni kiritganda, VMdagi barcha 17 ta topshiriq
+va flaglarni shu tokenga moslab qayta sozlaydi.
+"""
+
+import os
+import sys
+import subprocess
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+sys.path.insert(0, PROJECT_ROOT)
+
+from core_db import flag_engine
+from stage1_linux import setup_stage1
+from stage2_web.app import db_init
+
+CYAN = "\033[1;36m"
+GREEN = "\033[1;32m"
+YELLOW = "\033[1;33m"
+RED = "\033[1;31m"
+RESET = "\033[0m"
+
+
+def save_active_token(token: str):
+    """Tokenni tizim fayllariga yozish."""
+    # 1. /var/ctf ga
+    try:
+        os.makedirs("/var/ctf", exist_ok=True)
+        with open("/var/ctf/active_token.txt", "w", encoding="utf-8") as f:
+            f.write(token.strip())
+    except Exception:
+        pass
+
+    # 2. Loyiha ildiziga
+    try:
+        with open(os.path.join(PROJECT_ROOT, ".apex_token"), "w", encoding="utf-8") as f:
+            f.write(token.strip())
+    except Exception:
+        pass
+
+    # 3. Foydalanuvchi uy katalogiga
+    try:
+        home = os.path.expanduser("~")
+        with open(os.path.join(home, ".apex_token"), "w", encoding="utf-8") as f:
+            f.write(token.strip())
+    except Exception:
+        pass
+
+
+def main():
+    print(f"\n{CYAN}================================================================================{RESET}")
+    print(f"{GREEN}  🏢 APEX GLOBAL TECHNOLOGIES — CTF LABORATORIYASINI ISHGA TUSHIRISH{RESET}")
+    print(f"{CYAN}================================================================================{RESET}")
+
+    token_input = ""
+    if len(sys.argv) > 1:
+        token_input = sys.argv[1].strip()
+
+    if not token_input:
+        print(f"\n{YELLOW}Markaziy CTF veb-saytidan (Portal) ro'yxatdan o'tib olgan shaxsiy Tokeningizni kiriting.{RESET}")
+        print(f"Format namunasi: {CYAN}APEX-7F92{RESET} (yoki shunga o'xshash)\n")
+        try:
+            token_input = input(f"{YELLOW}👉 Shaxsiy Tokeningiz: {RESET}").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nAmal bekor qilindi.")
+            sys.exit(1)
+
+    norm_token = flag_engine.normalize_token(token_input)
+    if not norm_token or norm_token == "APEX-DEFAULT":
+        print(f"{RED}[!] Token kiritilmadi! Standart rejimda davom etilmoqda.{RESET}")
+        norm_token = "APEX-DEFAULT"
+
+    print(f"\n[*] Token qabul qilindi: {GREEN}{norm_token}{RESET}")
+    print("[*] Laboratoriya muhiti sozlanmoqda, iltimos kuting...")
+
+    # 1. Tokenni saqlash
+    save_active_token(norm_token)
+
+    # 2. 1-Bosqich (Linux Muhiti) sozlash
+    target_user = os.environ.get("SUDO_USER") or os.environ.get("USER") or "user"
+    setup_stage1.setup_stage1(username=target_user, token=norm_token)
+
+    # 3. 2-Bosqich (Web Pentest Muhiti) sozlash
+    db_init.init_apex_db(token=norm_token)
+
+    print(f"\n{CYAN}================================================================================{RESET}")
+    print(f"{GREEN}  ✅ LABORATORIYA MUVAFFAQIYATLI SOZLANDI VA ISHGA TUSHIRILDI!{RESET}")
+    print(f"{CYAN}--------------------------------------------------------------------------------{RESET}")
+    print(f"  🔑 Faol Token:            {YELLOW}{norm_token}{RESET}")
+    print(f"  📁 1-Bosqich (Linux):      {CYAN}cd ~/apex_corp{RESET}")
+    print(f"  🌐 2-Bosqich (Web):        {CYAN}http://localhost:5000{RESET}")
+    print(f"  🚩 Flaglarni topshirish:   {GREEN}Markaziy veb-saytdagi shaxsiy kabinetga kiriting!{RESET}")
+    print(f"{CYAN}================================================================================{RESET}\n")
+
+
+if __name__ == "__main__":
+    main()

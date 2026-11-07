@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ishtirokchi Portali — Apex Corp CTF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-body: #050811;
+            --card-dark: #0c1222;
+            --card-hover: #121b33;
+            --neon-green: #00ff88;
+            --neon-cyan: #00f2fe;
+            --neon-orange: #ff9900;
+            --neon-red: #ff3366;
+            --border-glow: rgba(0, 242, 254, 0.25);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 15px 25px;
+            overflow-x: hidden;
+        }
+
+        /* Navbar & Header */
+        .portal-navbar {
+            background: linear-gradient(135deg, rgba(12, 18, 34, 0.95), rgba(18, 28, 52, 0.95));
+            border: 1px solid var(--border-glow);
+            border-radius: 14px;
+            padding: 14px 24px;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.12);
+            margin-bottom: 20px;
+        }
+
+        .title-glow {
+            font-weight: 900;
+            background: linear-gradient(135deg, #00f2fe, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Token Card */
+        .token-card {
+            background: linear-gradient(135deg, rgba(20, 28, 55, 0.95), rgba(12, 18, 34, 0.95));
+            border: 1.5px solid rgba(255, 153, 0, 0.5);
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 30px rgba(255, 153, 0, 0.15);
+        }
+
+        .token-badge {
+            background: rgba(5, 8, 17, 0.85);
+            border: 1px dashed #ff9900;
+            border-radius: 8px;
+            padding: 8px 16px;
+        }
+
+        /* Tabs */
+        .nav-pills .nav-link {
+            color: #94a3b8;
+            background: rgba(12, 18, 34, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            margin-right: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-pills .nav-link.active {
+            color: #050811;
+            background: linear-gradient(135deg, #00f2fe, #00ff88);
+            border-color: transparent;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.35);
+        }
+
+        /* Challenge Cards */
+        .task-card {
+            background: var(--card-dark);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 18px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .task-card:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .task-card.solved {
+            border-color: rgba(0, 255, 136, 0.6);
+            background: linear-gradient(135deg, rgba(12, 18, 34, 0.95), rgba(5, 30, 20, 0.95));
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+        }
+
+        .flag-input {
+            background-color: rgba(5, 8, 17, 0.9);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            color: #00ff88;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .flag-input:focus {
+            background-color: #050811;
+            border-color: var(--neon-cyan);
+            color: #00ff88;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #00f2fe, #00ff88);
+            color: #050811;
+            font-weight: 700;
+            border: none;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.9;
+            color: #050811;
+        }
+
+        /* Universal Flag Bar */
+        .quick-submit-bar {
+            background: linear-gradient(135deg, rgba(12, 18, 34, 0.95), rgba(20, 30, 60, 0.95));
+            border: 1px solid var(--neon-cyan);
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header & User Status -->
+    <div class="portal-navbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="fs-2 text-info"><i class="fas fa-shield-virus"></i></div>
+            <div>
+                <h4 class="title-glow mb-0">APEX CORP CTF v2 — ISHTIROKCHI KABINETI</h4>
+                <div class="small text-muted">
+                    Xush kelibsiz, <strong class="text-white">{{ participant.full_name }}</strong> (<span class="text-info">@{{ participant.username }}</span>)
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="text-end">
+                <div class="small text-muted">Umumiy Ball:</div>
+                <div class="fs-4 fw-bold font-monospace text-warning" id="totalScoreDisplay">{{ participant.total_score }} ball</div>
+            </div>
+
+            <div class="vr bg-secondary opacity-50 mx-2" style="height: 35px;"></div>
+
+            <a href="/" target="_blank" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-tv me-1"></i> Katta Ekran (Matritsa)
+            </a>
+
+            <a href="/logout" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-sign-out-alt me-1"></i> Chiqish
+            </a>
+        </div>
+    </div>
+
+    <!-- Token Hero Banner -->
+    <div class="token-card">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mb-3 mb-lg-0">
+                <h5 class="text-warning fw-bold mb-1">
+                    <i class="fas fa-key me-2"></i> SIZNING SHAXSIY LABORATORIYA TOKENINGIZ:
+                </h5>
+                <p class="text-muted small mb-0">
+                    Sizga berilgan Virtual Mashinani (OVA) yoqqaningizda terminalda <code>apex-init</code> buyrug'ini bering va mana shu tokenni kiriting.
+                    Barcha 17 ta topshiriq va ularning flaglari aynan shu tokeningiz asosida laboratoriyada faollashtiriladi!
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <div class="token-badge d-inline-flex align-items-center gap-2">
+                    <span class="fs-3 fw-bold font-monospace text-warning" id="tokenValue">{{ participant.token }}</span>
+                    <button class="btn btn-sm btn-outline-warning" onclick="copyToken()" title="Tokenni nusxalash">
+                        <i class="fas fa-copy" id="copyIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tezkor Universal Flag Topshirish Maydoni -->
+    <div class="quick-submit-bar">
+        <form id="quickFlagForm" onsubmit="submitFlag(event, 'quickFlagInput')">
+            <div class="row align-items-center g-2">
+                <div class="col-md-3">
+                    <div class="fw-bold text-info"><i class="fas fa-flag-checkered me-2"></i> TEZKOR FLAG TOPSHIRISH:</div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">Ixtiyoriy topilgan flagni shu yerga kiriting</div>
+                </div>
+                <div class="col-md-7">
+                    <input type="text" id="quickFlagInput" class="form-control flag-input" placeholder="FLAG{v2_...}" required autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-submit w-100" id="quickSubmitBtn">
+                        <i class="fas fa-paper-plane me-1"></i> Tekshirish
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Alert xabarlar konteyneri -->
+    <div id="alertContainer"></div>
+
+    <!-- Topshiriqlar Bosqichlari (Tabs) -->
+    <ul class="nav nav-pills mb-4" id="ctfTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="stage1-tab" data-bs-toggle="pill" data-bs-target="#stage1-content" type="button">
+                <i class="fab fa-linux me-2"></i> 1-Bosqich: Linux Tizim Auditi
+                <span class="badge bg-dark ms-2" id="s1Badge">{{ stage1_solved_count }}/{{ stage1_total_count }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="stage2-tab" data-bs-toggle="pill" data-bs-target="#stage2-content" type="button">
+                <i class="fas fa-globe me-2"></i> 2-Bosqich: Web Pentest (OWASP 10)
+                <span class="badge bg-dark ms-2" id="s2Badge">{{ stage2_solved_count }}/{{ stage2_total_count }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="stage3-tab" data-bs-toggle="pill" data-bs-target="#stage3-content" type="button">
+                <i class="fas fa-file-shield me-2"></i> 3-Bosqich: Hisobot (Incident Report)
+                {% if participant.stage3_unlocked %}
+                <span class="badge bg-success ms-2">OCHILGAN</span>
+                {% else %}
+                <span class="badge bg-secondary ms-2"><i class="fas fa-lock"></i> QULFLANGAN</span>
+                {% endif %}
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Tarkibi -->
+    <div class="tab-content">
+        <!-- 1-BOSQICH (LINUX AUDIT) -->
+        <div class="tab-pane fade show active" id="stage1-content">
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>Laboratoriya yo'riqnomasi:</strong> Virtual mashinada <code>~/apex_corp</code> katalogiga o'ting. Har bir topshiriq papkasidagi <code>README.txt</code> faylini o'qing va Linux buyruqlari yordamida flagni toping.
+            </div>
+
+            <div class="row">
+                {% for task in stage1_tasks %}
+                <div class="col-lg-6">
+                    <div class="task-card {% if task.solved %}solved{% endif %}" id="card-{{ task.code }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-primary font-monospace me-2">{{ task.code }}</span>
+                                <span class="badge bg-dark text-info border border-secondary">{{ task.category }}</span>
+                                <span class="badge bg-dark text-secondary border border-secondary">{{ task.difficulty }}</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold font-monospace">+{{ task.points }} ball</span>
+                        </div>
+
+                        <h5 class="fw-bold text-white mb-2">{{ task.title }}</h5>
+                        <p class="text-muted small mb-3">{{ task.description }}</p>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25">
+                            <span class="status-indicator">
+                                {% if task.solved %}
+                                <span class="text-success fw-bold small"><i class="fas fa-check-circle me-1"></i> Yechilgan ({{ task.solved_at[:16] }})</span>
+                                {% else %}
+                                <span class="text-muted small"><i class="fas fa-hourglass-start me-1"></i> Yechilmagan</span>
+                                {% endif %}
+                            </span>
+                            {% if not task.solved %}
+                            <button class="btn btn-sm btn-outline-info" onclick="fillQuickSubmit('{{ task.code }}')">
+                                <i class="fas fa-arrow-up me-1"></i> Flag kiritish
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 2-BOSQICH (WEB PENTEST) -->
+        <div class="tab-pane fade" id="stage2-content">
+            <div class="alert alert-warning py-2 small mb-3">
+                <i class="fas fa-globe me-1"></i>
+                <strong>Veb Target:</strong> Virtual mashinangizda <code>http://localhost:5000</code> portida ishlayotgan Apex Global Technologies portalini pentest qiling.
+                Logini: <code>asmith</code>, Paroli: <code>spring2026</code>. 3-bosqichga o'tish uchun kamida <strong>1200 ball</strong> to'plang!
+            </div>
+
+            <div class="row">
+                {% for task in stage2_tasks %}
+                <div class="col-lg-6">
+                    <div class="task-card {% if task.solved %}solved{% endif %}" id="card-{{ task.code }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="badge bg-danger font-monospace me-2">{{ task.code }}</span>
+                                <span class="badge bg-dark text-warning border border-secondary">{{ task.category }}</span>
+                                <span class="badge bg-dark text-secondary border border-secondary">{{ task.difficulty }}</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold font-monospace">+{{ task.points }} ball</span>
+                        </div>
+
+                        <h5 class="fw-bold text-white mb-2">{{ task.title }}</h5>
+                        <p class="text-muted small mb-2">{{ task.description }}</p>
+                        <div class="small font-monospace text-info mb-3"><i class="fas fa-link me-1"></i> {{ task.endpoint }}</div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25">
+                            <span class="status-indicator">
+                                {% if task.solved %}
+                                <span class="text-success fw-bold small"><i class="fas fa-check-circle me-1"></i> Yechilgan ({{ task.solved_at[:16] }})</span>
+                                {% else %}
+                                <span class="text-muted small"><i class="fas fa-hourglass-start me-1"></i> Yechilmagan</span>
+                                {% endif %}
+                            </span>
+                            {% if not task.solved %}
+                            <button class="btn btn-sm btn-outline-info" onclick="fillQuickSubmit('{{ task.code }}')">
+                                <i class="fas fa-arrow-up me-1"></i> Flag kiritish
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 3-BOSQICH (HISOBOT) -->
+        <div class="tab-pane fade" id="stage3-content">
+            <div class="task-card p-4">
+                <h4 class="text-white mb-2"><i class="fas fa-file-contract text-warning me-2"></i> 3-Bosqich: Kiberxavfsizlik Hodisasi Hisoboti</h4>
+                <p class="text-muted">
+                    Ushbu bosqichda siz bajargan audit va pentesting harakatlaringiz bo'yicha rasmiy korporativ hisobot (Executive Summary & Technical Vulnerabilities) topshirishingiz kerak.
+                </p>
+
+                {% if participant.stage3_unlocked %}
+                <div class="alert alert-success py-2 small mb-4">
+                    <i class="fas fa-unlock me-1"></i> Tabriklaymiz! Siz 1200 balldan yuqori natija qayd etib, ushbu bosqichni ochdingiz.
+                </div>
+
+                {% if participant.report_file %}
+                <div class="p-3 bg-dark rounded border border-success mb-3">
+                    <div class="text-success fw-bold mb-1"><i class="fas fa-check-double me-1"></i> Hisobotingiz qabul qilingan!</div>
+                    <div class="small text-muted">Topshirilgan vaqt: {{ participant.report_submitted_at }}</div>
+                    <div class="small text-info mt-2">Hakamlar bahosi: <strong>{{ participant.report_score }} / 1000 ball</strong></div>
+                    {% if participant.report_feedback %}
+                    <div class="small text-warning mt-1">Izoh: {{ participant.report_feedback }}</div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <form action="/portal/upload_report" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label text-white">Hisobot faylini tanlang (PDF yoki DOCX formatida, max 25MB):</label>
+                        <input type="file" name="report" class="form-control bg-dark text-white border-secondary" accept=".pdf,.docx" required>
+                    </div>
+                    <button type="submit" class="btn btn-cyber px-4">
+                        <i class="fas fa-upload me-1"></i> Hisobotni topshirish
+                    </button>
+                </form>
+                {% endif %}
+
+                {% else %}
+                <div class="alert alert-secondary py-3">
+                    <div class="fw-bold mb-1"><i class="fas fa-lock text-warning me-2"></i> Ushbu bosqich hozircha qulflangan</div>
+                    <div class="small text-muted mb-2">
+                        Ochilish sharti: 2-bosqichda kamida <strong>1200 ball</strong> to'plashingiz kerak.
+                    </div>
+                    <div class="progress bg-dark border border-secondary" style="height: 12px;">
+                        {% set pct = (participant.stage2_score / 1200 * 100) | round | int %}
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ pct if pct <= 100 else 100 }}%"></div>
+                    </div>
+                    <div class="text-end small text-muted mt-1">{{ participant.stage2_score }} / 1200 ball ({{ pct }}%)</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToken() {
+            const token = document.getElementById("tokenValue").innerText.trim();
+            navigator.clipboard.writeText(token).then(() => {
+                const icon = document.getElementById("copyIcon");
+                icon.className = "fas fa-check text-success";
+                setTimeout(() => { icon.className = "fas fa-copy"; }, 2000);
+            });
+        }
+
+        function fillQuickSubmit(code) {
+            const input = document.getElementById("quickFlagInput");
+            input.focus();
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function showAlert(type, message) {
+            const container = document.getElementById("alertContainer");
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        async function submitFlag(e, inputId) {
+            e.preventDefault();
+            const input = document.getElementById(inputId);
+            const flag = input.value.trim();
+            if (!flag) return;
+
+            const btn = document.getElementById("quickSubmitBtn");
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>';
+
+            try {
+                const res = await fetch("/api/submit_flag", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ flag: flag })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert("success", `<i class="fas fa-trophy me-2"></i> ${data.message}`);
+                    input.value = "";
+
+                    // Kartani yashilga aylantirish
+                    if (data.code) {
+                        const card = document.getElementById("card-" + data.code);
+                        if (card) {
+                            card.classList.add("solved");
+                            const indicator = card.querySelector(".status-indicator");
+                            if (indicator) {
+                                indicator.innerHTML = `<span class="text-success fw-bold small"><i class="fas fa-check-circle me-1"></i> Yechilgan (Hozirgina)</span>`;
+                            }
+                        }
+                    }
+
+                    // Umumiy ballni yangilash
+                    if (data.new_total_score !== undefined) {
+                        document.getElementById("totalScoreDisplay").innerText = data.new_total_score + " ball";
+                    }
+                } else {
+                    showAlert("danger", `<i class="fas fa-times-circle me-2"></i> ${data.message}`);
+                }
+            } catch (err) {
+                showAlert("danger", "Tarmoq xatoligi yuz berdi: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Tekshirish';
+            }
+        }
+    </script>
+</body>
+</html>

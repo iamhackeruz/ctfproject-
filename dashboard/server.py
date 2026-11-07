@@ -15,7 +15,7 @@ import json
 import sqlite3
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, jsonify, request, Response, send_file, session, redirect, url_for
+from flask import Flask, render_template, jsonify, request, Response, send_file, session, redirect, url_for, abort
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
@@ -33,7 +33,18 @@ UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, "stage3_reporting", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin2026")
+ADMIN_USERNAMES = ["wow", "wow?", "admin"]
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "centerlar000")
+
+def is_admin_authorized(req) -> bool:
+    """Admin huquqini tekshirish (Sessiya orqali yoki kalit orqali)."""
+    if session.get("is_admin"):
+        return True
+    key = (req.headers.get("X-Admin-Key") or
+           req.form.get("key") or
+           req.args.get("key") or
+           req.cookies.get("admin_key"))
+    return key == ADMIN_PASSWORD
 
 
 # ==============================================================================
@@ -101,16 +112,28 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Ishtirokchi login sahifasi."""
+    """Ishtirokchi va Admin login sahifasi (Yagona xavfsiz kirish)."""
+    if session.get("is_admin"):
+        return redirect(url_for("admin_panel"))
     if "user_id" in session:
         return redirect(url_for("portal"))
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip().lower()
+        username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
 
-        participant = ctf_db.authenticate_participant(username, password)
+        # 1. Yashirin Admin tekshiruvi:
+        clean_user = username.lower()
+        if clean_user in [u.lower() for u in ADMIN_USERNAMES] and password == ADMIN_PASSWORD:
+            session.clear()
+            session["is_admin"] = True
+            session["admin_user"] = username
+            return redirect(url_for("admin_panel"))
+
+        # 2. Oddiy ishtirokchi (talaba) tekshiruvi:
+        participant = ctf_db.authenticate_participant(clean_user, password)
         if participant:
+            session.clear()
             session["user_id"] = participant["id"]
             session["username"] = participant["username"]
             session["token"] = participant["token"]
@@ -125,7 +148,7 @@ def login():
 def logout():
     """Tizimdan chiqish."""
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("home"))
 
 
 @app.route("/portal")
@@ -239,22 +262,22 @@ def sse_stream():
 
 
 # ==============================================================================
-# ADMIN BOSHQARUV PANEL
+# ADMIN BOSHQARUV PANELI (YASHIRIN VA HIMOYALANGAN)
 # ==============================================================================
 
 @app.route("/admin")
 def admin_panel():
-    auth_pass = request.args.get("key") or request.cookies.get("admin_key")
-    is_authenticated = (auth_pass == ADMIN_PASSWORD)
-    data = ctf_db.get_live_matrix_data() if is_authenticated else None
-    detailed = analytics.get_detailed_participants_data() if is_authenticated else []
-    return render_template("admin.html", authenticated=is_authenticated, data=data, detailed=detailed, admin_key=ADMIN_PASSWORD)
+    if not is_admin_authorized(request):
+        abort(404)
+
+    data = ctf_db.get_live_matrix_data()
+    detailed = analytics.get_detailed_participants_data()
+    return render_template("admin.html", authenticated=True, data=data, detailed=detailed, admin_key=ADMIN_PASSWORD)
 
 @app.route("/admin/export/excel")
 def admin_export_excel():
-    auth_pass = request.args.get("key") or request.cookies.get("admin_key")
-    if auth_pass != ADMIN_PASSWORD:
-        return "Ruxsat yo'q: Admin paroli talab etiladi", 403
+    if not is_admin_authorized(request):
+        abort(404)
 
     excel_stream = analytics.export_excel_bytes()
     filename = f"CTF_v2_Natijalar_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
@@ -267,9 +290,8 @@ def admin_export_excel():
 
 @app.route("/admin/api/clean-dummy-users", methods=["POST"])
 def admin_clean_dummy_users():
-    key = request.headers.get("X-Admin-Key") or request.form.get("key")
-    if key != ADMIN_PASSWORD:
-        return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
+    if not is_admin_authorized(request):
+        return jsonify({"status": "error", "message": "Admin ruxsati talab etiladi"}), 403
 
     conn = ctf_db.get_connection()
     cur = conn.cursor()
@@ -290,9 +312,8 @@ def admin_clean_dummy_users():
 
 @app.route("/admin/api/reset-participant", methods=["POST"])
 def admin_reset_participant():
-    key = request.headers.get("X-Admin-Key") or request.form.get("key")
-    if key != ADMIN_PASSWORD:
-        return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
+    if not is_admin_authorized(request):
+        return jsonify({"status": "error", "message": "Admin ruxsati talab etiladi"}), 403
 
     participant_id = int(request.form.get("participant_id", 0))
     if not participant_id:
@@ -324,9 +345,8 @@ def admin_reset_participant():
 
 @app.route("/admin/api/add-participant", methods=["POST"])
 def admin_add_participant():
-    key = request.headers.get("X-Admin-Key") or request.form.get("key")
-    if key != ADMIN_PASSWORD:
-        return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
+    if not is_admin_authorized(request):
+        return jsonify({"status": "error", "message": "Admin ruxsati talab etiladi"}), 403
 
     username = request.form.get("username", "").strip()
     full_name = request.form.get("full_name", "").strip()
@@ -339,9 +359,8 @@ def admin_add_participant():
 
 @app.route("/admin/api/grade-report", methods=["POST"])
 def admin_grade_report():
-    key = request.headers.get("X-Admin-Key") or request.form.get("key")
-    if key != ADMIN_PASSWORD:
-        return jsonify({"status": "error", "message": "Admin paroli xato"}), 403
+    if not is_admin_authorized(request):
+        return jsonify({"status": "error", "message": "Admin ruxsati talab etiladi"}), 403
 
     participant_id = int(request.form.get("participant_id"))
     score = int(request.form.get("score", 0))
@@ -380,9 +399,8 @@ def admin_grade_report():
 
 @app.route("/admin/report/preview/<int:participant_id>")
 def preview_report(participant_id):
-    auth_pass = request.args.get("key") or request.cookies.get("admin_key")
-    if auth_pass != ADMIN_PASSWORD:
-        return jsonify({"error": "Avtorizatsiya talab etiladi"}), 403
+    if not is_admin_authorized(request):
+        abort(404)
 
     conn = ctf_db.get_connection()
     row = conn.execute("SELECT full_name, report_file, report_score FROM participants WHERE id = ?", (participant_id,)).fetchone()
@@ -406,9 +424,8 @@ def preview_report(participant_id):
 
 @app.route("/admin/report/download/<int:participant_id>")
 def download_report_file(participant_id):
-    auth_pass = request.args.get("key") or request.cookies.get("admin_key")
-    if auth_pass != ADMIN_PASSWORD:
-        return "Ruxsat yo'q", 403
+    if not is_admin_authorized(request):
+        abort(404)
 
     conn = ctf_db.get_connection()
     row = conn.execute("SELECT report_file FROM participants WHERE id = ?", (participant_id,)).fetchone()
